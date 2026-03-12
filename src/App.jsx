@@ -306,8 +306,22 @@ function OwnerApproval({ data }) {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────
 export default function App() {
-  // ── Check for owner approval mode ──
+  const today     = new Date().toISOString().split("T")[0];
+  const requestId = "QR-" + Date.now().toString(36).toUpperCase();
+
+  // ── All hooks must be called unconditionally ──
   const [approvalData, setApprovalData] = useState(null);
+  const [form, setForm] = useState({
+    requestId, submittedBy: "Maria Santos", submittedDate: today, status: "Pending",
+    customer: "", customerEmail: "", industry: "Aerospace", part: "Data Plate - Engine Serial",
+    material: "Aluminum", length: "", width: "", thickness: "0.063",
+    quantity: "", finish: "Anodized Black", marking: "Laser Engraved", rush: "No", notes: "",
+  });
+  const [step, setStep]       = useState("form");
+  const [pricing, setPricing] = useState(null);
+  const [error, setError]     = useState("");
+  const [sending, setSending] = useState("");
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const approveParam = params.get("approve");
@@ -315,10 +329,9 @@ export default function App() {
       try { setApprovalData(JSON.parse(atob(approveParam))); } catch (e) { /* invalid */ }
     }
   }, []);
-  if (approvalData) return <OwnerApproval data={approvalData} />;
 
-  const today     = new Date().toISOString().split("T")[0];
-  const requestId = "QR-" + Date.now().toString(36).toUpperCase();
+  // ── Owner approval mode ──
+  if (approvalData) return <OwnerApproval data={approvalData} />;
 
   const inp = {
     width: "100%", padding: "11px 14px",
@@ -333,17 +346,6 @@ export default function App() {
     background: '#16093a', border: '1px solid rgba(139,92,246,0.5)',
     borderRadius: 12, padding: 24, backdropFilter: "blur(12px)",
   };
-
-  const [form, setForm] = useState({
-    requestId, submittedBy: "Maria Santos", submittedDate: today, status: "Pending",
-    customer: "", customerEmail: "", industry: "Aerospace", part: "Data Plate - Engine Serial",
-    material: "Aluminum", length: "", width: "", thickness: "0.063",
-    quantity: "", finish: "Anodized Black", marking: "Laser Engraved", rush: "No", notes: "",
-  });
-  const [step, setStep]       = useState("form");
-  const [pricing, setPricing] = useState(null);
-  const [error, setError]     = useState("");
-  const [sending, setSending] = useState("");
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = () => {
