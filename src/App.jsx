@@ -401,15 +401,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* AI Note */}
-            <div style={{ ...card, marginBottom: 16, borderColor: "rgba(139,92,246,0.4)" }}>
-              <div style={{ fontSize: 13, letterSpacing: 2, color: '#c4b5fd', fontSize: 11, textTransform: "uppercase", marginBottom: 12, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: B.primary, display: "inline-block", boxShadow: `0 0 8px ${B.primary}` }} />
-                AI Analysis · Activepieces + Claude Sonnet
-              </div>
-              <div style={{ fontSize: 14, color: B.muted, lineHeight: 1.7 }}>Full AI pricing analysis will be generated when you approve or escalate this quote. Powered by Activepieces automation with Claude Sonnet 4.6.</div>
-            </div>
-
             {/* Actions */}
             <div style={{ display: "flex", gap: 12 }}>
               <button onClick={() => sendToWebhook("approved")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(34,197,94,0.3)", opacity: sending ? 0.6 : 1 }}>{sending === "approved" ? "SENDING…" : "✓ APPROVE & SEND"}</button>
