@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ── BRAND TOKENS ──────────────────────────────────────────────────────────
 const B = {
@@ -91,8 +91,232 @@ function Badge({ label, color, glow }) {
   );
 }
 
+// ── OWNER APPROVAL PAGE ──────────────────────────────────────────────────
+function OwnerApproval({ data }) {
+  const [modifiedPrice, setModifiedPrice] = useState(data.unitPrice || "");
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const modifiedTotal = (parseFloat(modifiedPrice || 0) * parseInt(data.quantity || 1)).toFixed(2);
+  const priceChanged = parseFloat(modifiedPrice) !== parseFloat(data.unitPrice);
+
+  const handleApprove = async () => {
+    setSending(true);
+    try {
+      await fetch("https://cloud.activepieces.com/api/v1/webhooks/VCabSdPLabpnL8aUnebLz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "approved",
+          requestId: data.requestId,
+          submittedBy: data.submittedBy,
+          customer: data.customer,
+          customerEmail: data.customerEmail,
+          industry: data.industry,
+          part: data.part,
+          material: data.material,
+          size: data.size,
+          quantity: data.quantity,
+          finish: data.finish,
+          marking: data.marking,
+          rush: data.rush,
+          notes: data.notes || "",
+          unitPrice: modifiedPrice,
+          priceRange: data.priceRange,
+          total: modifiedTotal,
+          confidence: data.confidence,
+          matchCount: data.matchCount,
+          escalate: false,
+          aiAnalysis: "",
+          ownerApproved: true,
+          ownerModifiedPrice: priceChanged,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      setDone(true);
+    } catch (err) {
+      console.error("Approval error:", err);
+      alert("Failed to send approval. Please try again.");
+    }
+    setSending(false);
+  };
+
+  const card = {
+    background: '#16093a', border: '1px solid rgba(139,92,246,0.5)',
+    borderRadius: 12, padding: 24, backdropFilter: "blur(12px)",
+  };
+
+  if (done) {
+    return (
+      <div style={{ background: B.bg, minHeight: "100vh", fontFamily: "'DM Mono', monospace", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@700;800&display=swap');`}</style>
+        <div style={{ textAlign: "center", animation: "fadeUp 0.4s ease", maxWidth: 500 }}>
+          <style>{`@keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }`}</style>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.15)", border: "2px solid rgba(34,197,94,0.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: 36 }}>✓</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 800, color: B.text, marginBottom: 12 }}>Quote Approved</div>
+          <div style={{ color: B.muted, fontSize: 14, lineHeight: 1.7 }}>
+            {priceChanged
+              ? `Price updated to $${modifiedPrice}/unit ($${modifiedTotal} total). Confirmation email will be sent to ${data.customer}.`
+              : `Quote for ${data.customer} approved at $${modifiedPrice}/unit ($${modifiedTotal} total). Confirmation email will be sent.`}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: B.bg, minHeight: "100vh", fontFamily: "'DM Mono', monospace", position: "relative", overflow: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@700;800&display=swap');
+        @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes glow   { 0%,100%{opacity:0.15} 50%{opacity:0.28} }
+        input:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 2px rgba(139,92,246,0.2) !important; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #030014; }
+        ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 2px; }
+      `}</style>
+
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+        <div style={{ position: "absolute", top: "15%", left: "-8%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)", animation: "glow 5s ease infinite" }} />
+        <div style={{ position: "absolute", bottom: "5%", right: "-8%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%)", animation: "glow 5s ease infinite 2.5s" }} />
+      </div>
+
+      {/* Header */}
+      <div style={{ position: "relative", zIndex: 1, borderBottom: "1px solid rgba(139,92,246,0.2)", backdropFilter: "blur(20px)", background: "rgba(15,7,41,0.85)", padding: "16px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ background: "linear-gradient(135deg, #7c3aed, #8b5cf6)", color: "#fff", fontSize: 14, letterSpacing: 3, fontWeight: 700, padding: "6px 12px", borderRadius: 6, boxShadow: "0 0 20px rgba(139,92,246,0.6)" }}>PR1SM</div>
+          <div>
+            <div style={{ color: B.text, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17, fontWeight: 800, letterSpacing: -0.3 }}>Pricing Engine</div>
+            <div style={{ color: B.muted, fontSize: 13, letterSpacing: 2, marginTop: 1 }}>OWNER APPROVAL · QUOTE REVIEW</div>
+          </div>
+        </div>
+        <Badge label="ESCALATED" color={B.warning} glow />
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 720, margin: "0 auto", padding: "32px 24px", animation: "fadeUp 0.4s ease" }}>
+
+        {/* Title */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 800, color: B.text }}>Quote Requires Your Approval</div>
+          <div style={{ color: B.muted, fontSize: 13, marginTop: 4 }}>Review the AI-recommended pricing below. Approve as-is or adjust the price.</div>
+        </div>
+
+        {/* Customer & Part Info */}
+        <div style={{ ...card, marginBottom: 16 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: '#c4b5fd', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Quote Details · {data.requestId}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[
+              ["Customer", data.customer],
+              ["Email", data.customerEmail],
+              ["Industry", data.industry],
+              ["Part", data.part],
+              ["Material", data.material],
+              ["Size", data.size],
+              ["Quantity", data.quantity + " units"],
+              ["Finish", data.finish],
+              ["Marking", data.marking],
+              ["Rush", data.rush],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
+                <span style={{ fontSize: 13, color: B.muted }}>{k}</span>
+                <span style={{ fontSize: 13, color: B.text, fontWeight: 500 }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* AI Recommendation */}
+        <div style={{ ...card, marginBottom: 16, borderColor: "rgba(34,197,94,0.4)" }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: '#67e8f9', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(34,197,94,0.3)', paddingBottom: 8 }}>System Recommendation</div>
+          <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ color: B.muted, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Unit Price</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, fontWeight: 800, background: "linear-gradient(135deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>${data.unitPrice}</div>
+            </div>
+            <div>
+              <div style={{ color: B.muted, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Total</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 800, color: B.text }}>${data.total}</div>
+            </div>
+            <div>
+              <div style={{ color: B.muted, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Range</div>
+              <div style={{ fontSize: 14, color: B.muted }}>${data.priceRange} / unit</div>
+            </div>
+            <div>
+              <div style={{ color: B.muted, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>Confidence</div>
+              <Badge label={data.confidence} color={data.confidence === "HIGH" ? B.success : data.confidence === "MEDIUM" ? B.warning : B.danger} glow />
+            </div>
+          </div>
+        </div>
+
+        {/* Price Adjustment */}
+        <div style={{ ...card, marginBottom: 24, borderColor: "rgba(139,92,246,0.6)", background: "linear-gradient(135deg, #16093a, rgba(139,92,246,0.08))" }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: '#c4b5fd', textTransform: "uppercase", marginBottom: 16, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Your Decision</div>
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <label style={{ display: "block", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 6 }}>Unit Price ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={modifiedPrice}
+                onChange={e => setModifiedPrice(e.target.value)}
+                style={{
+                  width: "100%", padding: "14px 16px", background: "#1a0f3d",
+                  border: `2px solid ${priceChanged ? B.warning : 'rgba(139,92,246,0.45)'}`,
+                  borderRadius: 8, fontSize: 22, color: B.text, fontWeight: 700,
+                  fontFamily: "'Plus Jakarta Sans', sans-serif", boxSizing: "border-box", outline: "none",
+                  transition: "border-color 0.2s",
+                }}
+              />
+            </div>
+            <div style={{ textAlign: "center", paddingBottom: 4 }}>
+              <div style={{ color: B.muted, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>New Total</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: priceChanged ? B.warning : B.text }}>${modifiedTotal}</div>
+              <div style={{ color: B.muted, fontSize: 12, marginTop: 2 }}>for {data.quantity} units</div>
+            </div>
+          </div>
+          {priceChanged && (
+            <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 6, fontSize: 12, color: B.warning }}>
+              Price modified from ${data.unitPrice} to ${modifiedPrice} per unit
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: "flex", gap: 12 }}>
+          <button
+            onClick={handleApprove}
+            disabled={sending || !modifiedPrice}
+            style={{
+              flex: 1, padding: "16px",
+              background: "linear-gradient(135deg, #16a34a, #22c55e)",
+              color: "#fff", border: "none", borderRadius: 8, fontSize: 14,
+              letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer",
+              fontFamily: "'DM Mono', monospace", fontWeight: 600,
+              boxShadow: "0 0 24px rgba(34,197,94,0.4)",
+              opacity: sending ? 0.6 : 1,
+            }}
+          >
+            {sending ? "APPROVING…" : priceChanged ? `APPROVE AT $${modifiedPrice}` : "APPROVE QUOTE"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────
 export default function App() {
+  // ── Check for owner approval mode ──
+  const [approvalData, setApprovalData] = useState(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const approveParam = params.get("approve");
+    if (approveParam) {
+      try { setApprovalData(JSON.parse(atob(approveParam))); } catch (e) { /* invalid */ }
+    }
+  }, []);
+  if (approvalData) return <OwnerApproval data={approvalData} />;
+
   const today     = new Date().toISOString().split("T")[0];
   const requestId = "QR-" + Date.now().toString(36).toUpperCase();
 
@@ -134,8 +358,11 @@ export default function App() {
 
   const sendToWebhook = async (action) => {
     setSending(action);
+    const webhookUrl = action === "escalated"
+      ? "https://cloud.activepieces.com/api/v1/webhooks/slPOyPlR2N2vbG0Pf11JI"
+      : "https://cloud.activepieces.com/api/v1/webhooks/VCabSdPLabpnL8aUnebLz";
     try {
-      await fetch("https://cloud.activepieces.com/api/v1/webhooks/VCabSdPLabpnL8aUnebLz", {
+      await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
