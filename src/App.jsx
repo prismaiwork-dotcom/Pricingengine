@@ -140,6 +140,7 @@ export default function App() {
   const [aiText, setAiText]   = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError]     = useState("");
+  const [sending, setSending] = useState("");
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = async () => {
@@ -154,6 +155,45 @@ export default function App() {
     catch { setAiText("AI analysis unavailable. Use pricing data above."); }
     setAiLoading(false);
     setStep("result");
+  };
+
+  const sendToWebhook = async (action) => {
+    setSending(action);
+    try {
+      await fetch("https://cloud.activepieces.com/api/v1/webhooks/VCabSdPLabpnL8aUnebLz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          requestId: form.requestId,
+          submittedBy: form.submittedBy,
+          customer: form.customer,
+          industry: form.industry,
+          part: form.part,
+          material: form.material,
+          size: `${form.length} x ${form.width} x ${form.thickness} in`,
+          quantity: form.quantity,
+          finish: form.finish,
+          marking: form.marking,
+          rush: form.rush,
+          notes: form.notes,
+          unitPrice: pricing.unitPrice,
+          priceRange: `${pricing.low} - ${pricing.high}`,
+          total: pricing.total,
+          confidence: pricing.confidence,
+          matchCount: pricing.matchCount,
+          escalate: pricing.escalate,
+          aiAnalysis: aiText,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      setSending("");
+      alert(action === "approved" ? "Quote approved and sent!" : "Quote escalated to owner!");
+    } catch (err) {
+      console.error("Webhook error:", err);
+      setSending("");
+      alert("Failed to send. Please try again.");
+    }
   };
 
   const reset = () => {
@@ -399,8 +439,8 @@ export default function App() {
 
             {/* Actions */}
             <div style={{ display: "flex", gap: 12 }}>
-              <button style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(34,197,94,0.3)" }}>✓ APPROVE & SEND</button>
-              <button style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #8b5cf6)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(139,92,246,0.4)" }}>↑ ESCALATE TO OWNER</button>
+              <button onClick={() => sendToWebhook("approved")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(34,197,94,0.3)", opacity: sending ? 0.6 : 1 }}>{sending === "approved" ? "SENDING…" : "✓ APPROVE & SEND"}</button>
+              <button onClick={() => sendToWebhook("escalated")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #8b5cf6)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(139,92,246,0.4)", opacity: sending ? 0.6 : 1 }}>{sending === "escalated" ? "SENDING…" : "↑ ESCALATE TO OWNER"}</button>
               <button onClick={reset} style={{ padding: "14px 24px", background: B.glass, color: B.muted, border: '1px solid rgba(139,92,246,0.45)', borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Mono', monospace", backdropFilter: "blur(8px)" }}>✕ REJECT</button>
             </div>
 
