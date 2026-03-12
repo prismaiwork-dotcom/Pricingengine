@@ -67,25 +67,6 @@ function calculatePrice(form) {
   };
 }
 
-// ── AI ANALYSIS (via serverless function) ─────────────────────────────────
-async function getAIAnalysis(form, pricing) {
-  try {
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ form, pricing }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      console.error('API error:', data);
-      return `Analysis unavailable: ${data.error || 'Unknown error'}`;
-    }
-    return data.analysis || "Analysis unavailable.";
-  } catch (error) {
-    console.error('Fetch error:', error);
-    return "AI analysis unavailable. Use pricing data above.";
-  }
-}
 
 // ── FIELD ─────────────────────────────────────────────────────────────────
 function Field({ label, children, required }) {
@@ -137,24 +118,18 @@ export default function App() {
   });
   const [step, setStep]       = useState("form");
   const [pricing, setPricing] = useState(null);
-  const [aiText, setAiText]   = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError]     = useState("");
   const [sending, setSending] = useState("");
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const submit = async () => {
+  const submit = () => {
     if (!form.customer || !form.length || !form.width || !form.quantity) {
       setError("Please fill in all required fields."); return;
     }
     setError(""); setStep("calculating");
     const p = calculatePrice(form);
     setPricing(p);
-    setAiLoading(true);
-    try { setAiText(await getAIAnalysis(form, p)); }
-    catch { setAiText("AI analysis unavailable. Use pricing data above."); }
-    setAiLoading(false);
-    setStep("result");
+    setTimeout(() => setStep("result"), 600);
   };
 
   const sendToWebhook = async (action) => {
@@ -183,7 +158,7 @@ export default function App() {
           confidence: pricing.confidence,
           matchCount: pricing.matchCount,
           escalate: pricing.escalate,
-          aiAnalysis: aiText,
+          aiAnalysis: "",
           timestamp: new Date().toISOString(),
         }),
       });
@@ -197,7 +172,7 @@ export default function App() {
   };
 
   const reset = () => {
-    setStep("form"); setPricing(null); setAiText("");
+    setStep("form"); setPricing(null);
     setForm(f => ({ ...f, customer: "", length: "", width: "", quantity: "", notes: "", requestId: "QR-" + Date.now().toString(36).toUpperCase() }));
   };
 
@@ -421,20 +396,13 @@ export default function App() {
               </div>
             </div>
 
-            {/* AI Analysis */}
+            {/* AI Note */}
             <div style={{ ...card, marginBottom: 16, borderColor: "rgba(139,92,246,0.4)" }}>
-              <div style={{ fontSize: 13, letterSpacing: 2, color: '#c4b5fd', fontSize: 11, textTransform: "uppercase", marginBottom: 16, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 13, letterSpacing: 2, color: '#c4b5fd', fontSize: 11, textTransform: "uppercase", marginBottom: 12, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: B.primary, display: "inline-block", boxShadow: `0 0 8px ${B.primary}` }} />
-                AI Analysis · Claude Sonnet
+                AI Analysis · Activepieces + Claude Sonnet
               </div>
-              {aiLoading ? (
-                <div style={{ textAlign: "center", padding: "24px 0" }}>
-                  <div style={{ width: 28, height: 28, border: "2px solid rgba(139,92,246,0.3)", borderTopColor: B.primary, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-                  <div style={{ fontSize: 13, color: B.muted, animation: "pulse 1.5s ease infinite" }}>Generating analysis…</div>
-                </div>
-              ) : (
-                <div style={{ fontSize: 14, color: '#f1f5f9', lineHeight: 1.9, whiteSpace: "pre-wrap", opacity: 0.9 }}>{aiText}</div>
-              )}
+              <div style={{ fontSize: 14, color: B.muted, lineHeight: 1.7 }}>Full AI pricing analysis will be generated when you approve or escalate this quote. Powered by Activepieces automation with Claude Sonnet 4.6.</div>
             </div>
 
             {/* Actions */}
