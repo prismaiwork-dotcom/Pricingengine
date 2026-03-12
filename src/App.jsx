@@ -112,7 +112,7 @@ export default function App() {
 
   const [form, setForm] = useState({
     requestId, submittedBy: "Maria Santos", submittedDate: today, status: "Pending",
-    customer: "", industry: "Aerospace", part: "Data Plate - Engine Serial",
+    customer: "", customerEmail: "", industry: "Aerospace", part: "Data Plate - Engine Serial",
     material: "Aluminum", length: "", width: "", thickness: "0.063",
     quantity: "", finish: "Anodized Black", marking: "Laser Engraved", rush: "No", notes: "",
   });
@@ -123,7 +123,7 @@ export default function App() {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = () => {
-    if (!form.customer || !form.length || !form.width || !form.quantity) {
+    if (!form.customer || !form.customerEmail || !form.length || !form.width || !form.quantity) {
       setError("Please fill in all required fields."); return;
     }
     setError(""); setStep("calculating");
@@ -143,6 +143,7 @@ export default function App() {
           requestId: form.requestId,
           submittedBy: form.submittedBy,
           customer: form.customer,
+          customerEmail: form.customerEmail,
           industry: form.industry,
           part: form.part,
           material: form.material,
@@ -173,7 +174,7 @@ export default function App() {
 
   const reset = () => {
     setStep("form"); setPricing(null);
-    setForm(f => ({ ...f, customer: "", length: "", width: "", quantity: "", notes: "", requestId: "QR-" + Date.now().toString(36).toUpperCase() }));
+    setForm(f => ({ ...f, customer: "", customerEmail: "", length: "", width: "", quantity: "", notes: "", requestId: "QR-" + Date.now().toString(36).toUpperCase() }));
   };
 
   return (
@@ -238,6 +239,9 @@ export default function App() {
                 </Field>
                 <Field label="Customer Name" required>
                   <input style={inp} placeholder="e.g. Bell Helicopter" value={form.customer} onChange={e => set("customer", e.target.value)} />
+                </Field>
+                <Field label="Customer Email" required>
+                  <input style={inp} type="email" placeholder="e.g. procurement@bellhelicopter.com" value={form.customerEmail} onChange={e => set("customerEmail", e.target.value)} />
                 </Field>
                 <Field label="Industry" required>
                   <select style={inp} value={form.industry} onChange={e => set("industry", e.target.value)}>
@@ -379,6 +383,7 @@ export default function App() {
                 {[
                   ["Submitted By", form.submittedBy],
                   ["Customer", form.customer],
+                  ["Email", form.customerEmail],
                   ["Industry", form.industry],
                   ["Part Name", form.part],
                   ["Material", form.material],
