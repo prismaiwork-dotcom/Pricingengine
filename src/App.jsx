@@ -58,12 +58,50 @@ function calculatePrice(form) {
   const unit  = (base * rush).toFixed(2);
   const total = (unit * parseInt(form.quantity || 1)).toFixed(2);
   const conf  = priced.length >= 5 ? "HIGH" : priced.length >= 2 ? "MEDIUM" : "LOW";
+
+  // ── Build pricing rationale ──
+  const avgPpsqin = avg.toFixed(2);
+  const topComps = priced.slice(0, 3);
+  const custList = [...new Set(topComps.map(q => q.customer))].join(", ");
+  const rationale = [];
+
+  // Pricing method
+  rationale.push(
+    `Recommended price of $${(base * rush).toFixed(2)}/unit is derived from ${priced.length} historical won quotes` +
+    ` in ${form.industry} using ${form.material}, averaging $${avgPpsqin}/sq.in across a ${area} sq.in part area.`
+  );
+
+  // Market positioning
+  if (priced.length > 0) {
+    const prices = priced.map(q => parseFloat(q.unit_price_usd));
+    const minP = Math.min(...prices).toFixed(2);
+    const maxP = Math.max(...prices).toFixed(2);
+    rationale.push(
+      `Historical unit prices for comparable orders range from $${minP} to $${maxP}.` +
+      (custList ? ` Key reference accounts: ${custList}.` : "")
+    );
+  }
+
+  // Volume / rush / risk
+  const qty = parseInt(form.quantity || 1);
+  if (qty >= 200) rationale.push(`Volume of ${qty} units positions this as a mid-to-high volume order — pricing reflects economies of scale.`);
+  else if (qty <= 30) rationale.push(`Low volume of ${qty} units — per-unit cost is higher due to limited scale efficiencies.`);
+
+  if (form.rush === "Yes") rationale.push(`A 25% rush premium has been applied to account for expedited production scheduling and priority handling.`);
+
+  if (conf === "LOW") rationale.push(`⚠ Low confidence — fewer than 2 comparable quotes found. Manual review strongly recommended before sending.`);
+  else if (conf === "MEDIUM") rationale.push(`Moderate confidence — 2 to 4 comparable quotes found. Price is directionally sound but a quick review is advised.`);
+  else rationale.push(`High confidence — ${priced.length} comparable quotes provide a strong data foundation for this recommendation.`);
+
+  if (parseFloat((base * rush * qty).toFixed(2)) > 5000) rationale.push(`Total exceeds $5,000 threshold — owner approval is required per company policy.`);
+
   return {
     unitPrice: unit, low: (base * 0.90).toFixed(2), high: (base * 1.15).toFixed(2),
     total, confidence: conf, matchCount: priced.length,
     comparables: priced.slice(0, 3),
     escalate: parseFloat(total) > 5000 || form.rush === "Yes",
     rushApplied: form.rush === "Yes",
+    rationale,
   };
 }
 
@@ -631,6 +669,22 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* AI Rationale */}
+            {pricing.rationale && pricing.rationale.length > 0 && (
+              <div style={{ ...card, marginBottom: 16, position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #7c3aed, #a855f7, #6366f1)" }} />
+                <div style={{ fontSize: 11, letterSpacing: 2, color: '#a855f7', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14 }}>⚡</span> AI Pricing Rationale
+                </div>
+                {pricing.rationale.map((line, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < pricing.rationale.length - 1 ? 10 : 0 }}>
+                    <span style={{ color: B.primary400, fontSize: 10, marginTop: 5, flexShrink: 0 }}>●</span>
+                    <p style={{ margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.6 }}>{line}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Actions */}
             <div style={{ display: "flex", gap: 12 }}>
