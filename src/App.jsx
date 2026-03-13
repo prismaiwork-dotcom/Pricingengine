@@ -130,6 +130,7 @@ function OwnerApproval({ data }) {
           aiAnalysis: "",
           ownerApproved: true,
           ownerModifiedPrice: priceChanged,
+          approvedBy: "Owner",
           timestamp: new Date().toISOString(),
         }),
       });
@@ -389,6 +390,7 @@ export default function App() {
           matchCount: pricing.matchCount,
           escalate: pricing.escalate,
           aiAnalysis: "",
+          approvedBy: action === "approved" ? form.submittedBy : "",
           timestamp: new Date().toISOString(),
         }),
       });
