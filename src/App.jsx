@@ -38,12 +38,31 @@ const HISTORICAL_QUOTES = [
   { quote_id:"Q-2024-030", customer:"Sikorsky",          industry:"Aerospace",  material:"Aluminum",       size_length_in:"3",   size_width_in:"2",    quantity:"70",  unit_price_usd:"24",   won_lost:"Won" },
 ];
 
+// ── SAMPLE AUDIT DATA ────────────────────────────────────────────────────
+const SAMPLE_AUDIT_DATA = [
+  { requestId:"QR-S001", timestamp:"2026-03-14T09:12:33.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Bell Helicopter", customerEmail:"procurement@bellhelicopter.com", industry:"Aerospace", part:"Data Plate - Engine Serial", material:"Aluminum", size:"4 x 2 x 0.063 in", quantity:"75", finish:"Anodized Black", marking:"Laser Engraved", rush:"No", notes:"", unitPrice:"17.17", priceRange:"15.46 - 19.75", total:"1287.75", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S002", timestamp:"2026-03-13T14:45:10.000Z", status:"Escalated", submittedBy:"James Rivera", customer:"Lockheed Martin", customerEmail:"quotes@lockheedmartin.com", industry:"Defense", part:"Airframe Plate", material:"Aluminum", size:"10 x 6 x 0.08 in", quantity:"20", finish:"Alodine", marking:"Chemical Etch", rush:"Yes", notes:"ITAR controlled", unitPrice:"97.50", priceRange:"87.75 - 112.13", total:"1950.00", confidence:"MEDIUM", approvedBy:"" },
+  { requestId:"QR-S003", timestamp:"2026-03-13T11:22:05.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Boeing", customerEmail:"sourcing@boeing.com", industry:"Aerospace", part:"Landing Gear Plate", material:"Stainless Steel", size:"5 x 3 x 0.05 in", quantity:"45", finish:"Passivated", marking:"Laser Engraved", rush:"No", notes:"AS9100 required", unitPrice:"38.00", priceRange:"34.20 - 43.70", total:"1710.00", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S004", timestamp:"2026-03-12T16:08:41.000Z", status:"Rejected", submittedBy:"Carlos Vega", customer:"Tesla Motors", customerEmail:"procurement@tesla.com", industry:"Automotive", part:"VIN Plate - Cab Door", material:"Aluminum", size:"3 x 2 x 0.04 in", quantity:"1000", finish:"Anodized", marking:"Laser Engraved", rush:"No", notes:"Customer requested lower price", unitPrice:"7.83", priceRange:"7.05 - 9.01", total:"7830.00", confidence:"MEDIUM", approvedBy:"" },
+  { requestId:"QR-S005", timestamp:"2026-03-12T10:33:18.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Medtronic", customerEmail:"vendor@medtronic.com", industry:"Medical", part:"Surgical Instrument Tag", material:"Stainless Steel", size:"1.5 x 0.5 x 0.03 in", quantity:"200", finish:"Electropolished", marking:"Laser Engraved", rush:"No", notes:"FDA UDI compliant", unitPrice:"18.50", priceRange:"16.65 - 21.28", total:"3700.00", confidence:"HIGH", approvedBy:"James Rivera" },
+  { requestId:"QR-S006", timestamp:"2026-03-11T08:55:02.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Caterpillar", customerEmail:"purchasing@cat.com", industry:"Automotive", part:"Equipment Nameplate", material:"Aluminum", size:"5 x 3 x 0.063 in", quantity:"250", finish:"Anodized Black", marking:"Embossed", rush:"No", notes:"", unitPrice:"9.20", priceRange:"8.28 - 10.58", total:"2300.00", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S007", timestamp:"2026-03-11T13:20:55.000Z", status:"Escalated", submittedBy:"Carlos Vega", customer:"Northrop Grumman", customerEmail:"contracts@northropgrumman.com", industry:"Defense", part:"Electronics Panel ID", material:"Stainless Steel", size:"8 x 4 x 0.05 in", quantity:"30", finish:"Passivated", marking:"Chemical Etch", rush:"Yes", notes:"ITAR controlled, classified project", unitPrice:"52.50", priceRange:"47.25 - 60.38", total:"1575.00", confidence:"MEDIUM", approvedBy:"" },
+  { requestId:"QR-S008", timestamp:"2026-03-10T15:42:30.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Stryker", customerEmail:"procurement@stryker.com", industry:"Medical", part:"Implant ID Tag", material:"Titanium", size:"1.5 x 0.75 x 0.02 in", quantity:"100", finish:"Electropolished", marking:"Laser Engraved", rush:"No", notes:"ISO 13485, biocompatible", unitPrice:"38.00", priceRange:"34.20 - 43.70", total:"3800.00", confidence:"HIGH", approvedBy:"James Rivera" },
+  { requestId:"QR-S009", timestamp:"2026-03-10T09:15:44.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Airbus", customerEmail:"supply.chain@airbus.com", industry:"Aerospace", part:"Interior Panel Placard", material:"Aluminum", size:"6 x 3 x 0.04 in", quantity:"150", finish:"Anodized", marking:"Silkscreen", rush:"No", notes:"", unitPrice:"19.50", priceRange:"17.55 - 22.43", total:"2925.00", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S010", timestamp:"2026-03-09T11:30:12.000Z", status:"Rejected", submittedBy:"Carlos Vega", customer:"General Dynamics", customerEmail:"quotes@gd.com", industry:"Defense", part:"Warning Label", material:"Polyester", size:"4 x 2 x 0.01 in", quantity:"500", finish:"None", marking:"Digital Print", rush:"No", notes:"Budget constraints", unitPrice:"3.20", priceRange:"2.88 - 3.68", total:"1600.00", confidence:"LOW", approvedBy:"" },
+  { requestId:"QR-S011", timestamp:"2026-03-08T14:05:28.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Peterbilt Motors", customerEmail:"purchasing@peterbilt.com", industry:"Automotive", part:"Bumper ID Plate", material:"Stainless Steel", size:"3 x 2 x 0.05 in", quantity:"300", finish:"Brushed", marking:"Embossed", rush:"No", notes:"", unitPrice:"8.75", priceRange:"7.88 - 10.06", total:"2625.00", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S012", timestamp:"2026-03-07T10:48:33.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Boston Scientific", customerEmail:"vendor.mgmt@bsci.com", industry:"Medical", part:"Device Serial Plate", material:"Titanium", size:"1.5 x 0.75 x 0.02 in", quantity:"75", finish:"Electropolished", marking:"Laser Engraved", rush:"Yes", notes:"Urgent production run", unitPrice:"47.50", priceRange:"34.20 - 43.70", total:"3562.50", confidence:"HIGH", approvedBy:"Owner" },
+];
+
 // ── AUDIT TRAIL HELPERS ──────────────────────────────────────────────────
 const AUDIT_KEY = "prism_audit_trail";
 
 function getAuditTrail() {
-  try { return JSON.parse(localStorage.getItem(AUDIT_KEY) || "[]"); }
-  catch { return []; }
+  try {
+    const stored = JSON.parse(localStorage.getItem(AUDIT_KEY) || "[]");
+    if (stored.length === 0) return [...SAMPLE_AUDIT_DATA];
+    return stored;
+  } catch { return [...SAMPLE_AUDIT_DATA]; }
 }
 
 function saveAuditEntry(entry) {
