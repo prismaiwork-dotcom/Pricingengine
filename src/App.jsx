@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // ── BRAND TOKENS ──────────────────────────────────────────────────────────
 const B = {
@@ -38,6 +38,38 @@ const HISTORICAL_QUOTES = [
   { quote_id:"Q-2024-030", customer:"Sikorsky",          industry:"Aerospace",  material:"Aluminum",       size_length_in:"3",   size_width_in:"2",    quantity:"70",  unit_price_usd:"24",   won_lost:"Won" },
 ];
 
+// ── AUDIT TRAIL HELPERS ──────────────────────────────────────────────────
+const AUDIT_KEY = "prism_audit_trail";
+
+function getAuditTrail() {
+  try { return JSON.parse(localStorage.getItem(AUDIT_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function saveAuditEntry(entry) {
+  const trail = getAuditTrail();
+  trail.unshift(entry);
+  localStorage.setItem(AUDIT_KEY, JSON.stringify(trail));
+}
+
+function exportToCSV(data) {
+  if (!data.length) return;
+  const headers = ["Request ID","Timestamp","Status","Submitted By","Customer","Email","Industry","Part","Material","Size","Quantity","Finish","Marking","Rush","Unit Price","Total","Confidence","Approved By","Notes"];
+  const rows = data.map(r => [
+    r.requestId, r.timestamp, r.status, r.submittedBy, r.customer, r.customerEmail,
+    r.industry, r.part, r.material, r.size, r.quantity, r.finish, r.marking, r.rush,
+    r.unitPrice, r.total, r.confidence, r.approvedBy || "", r.notes || "",
+  ].map(v => `"${String(v || "").replace(/"/g, '""')}"`));
+  const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `PR1SM_Audit_Trail_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── PRICING ENGINE ────────────────────────────────────────────────────────
 function calculatePrice(form) {
   const similar = HISTORICAL_QUOTES.filter(q => {
@@ -65,13 +97,11 @@ function calculatePrice(form) {
   const custList = [...new Set(topComps.map(q => q.customer))].join(", ");
   const rationale = [];
 
-  // Pricing method
   rationale.push(
     `Recommended price of $${(base * rush).toFixed(2)}/unit is derived from ${priced.length} historical won quotes` +
     ` in ${form.industry} using ${form.material}, averaging $${avgPpsqin}/sq.in across a ${area} sq.in part area.`
   );
 
-  // Market positioning
   if (priced.length > 0) {
     const prices = priced.map(q => parseFloat(q.unit_price_usd));
     const minP = Math.min(...prices).toFixed(2);
@@ -82,14 +112,13 @@ function calculatePrice(form) {
     );
   }
 
-  // Volume / rush / risk
   const qty = parseInt(form.quantity || 1);
   if (qty >= 200) rationale.push(`Volume of ${qty} units positions this as a mid-to-high volume order — pricing reflects economies of scale.`);
   else if (qty <= 30) rationale.push(`Low volume of ${qty} units — per-unit cost is higher due to limited scale efficiencies.`);
 
   if (form.rush === "Yes") rationale.push(`A 25% rush premium has been applied to account for expedited production scheduling and priority handling.`);
 
-  if (conf === "LOW") rationale.push(`⚠ Low confidence — fewer than 2 comparable quotes found. Manual review strongly recommended before sending.`);
+  if (conf === "LOW") rationale.push(`Warning: Low confidence — fewer than 2 comparable quotes found. Manual review strongly recommended before sending.`);
   else if (conf === "MEDIUM") rationale.push(`Moderate confidence — 2 to 4 comparable quotes found. Price is directionally sound but a quick review is advised.`);
   else rationale.push(`High confidence — ${priced.length} comparable quotes provide a strong data foundation for this recommendation.`);
 
@@ -121,11 +150,301 @@ function Field({ label, children, required }) {
 function Badge({ label, color, glow }) {
   return (
     <span style={{
-      fontSize: 13, letterSpacing: 2, textTransform: "uppercase", padding: "4px 10px",
+      letterSpacing: 2, textTransform: "uppercase", padding: "4px 10px",
       background: `${color}18`, color, border: `1px solid ${color}40`,
       borderRadius: 20, fontFamily: "'DM Mono', monospace", fontWeight: 600, fontSize: 11,
       boxShadow: glow ? `0 0 10px ${color}40` : "none",
     }}>{label}</span>
+  );
+}
+
+// ── AUDIT TRAIL PAGE ────────────────────────────────────────────────────
+function AuditTrail({ onBack }) {
+  const [trail, setTrail] = useState(getAuditTrail());
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [industryFilter, setIndustryFilter] = useState("All");
+  const [confidenceFilter, setConfidenceFilter] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortCol, setSortCol] = useState("timestamp");
+  const [sortDir, setSortDir] = useState("desc");
+  const [selectedRow, setSelectedRow] = useState(null);
+
+  // Refresh when component mounts
+  useEffect(() => { setTrail(getAuditTrail()); }, []);
+
+  const statuses = useMemo(() => ["All", ...new Set(trail.map(r => r.status))], [trail]);
+  const industries = useMemo(() => ["All", ...new Set(trail.map(r => r.industry))], [trail]);
+
+  const filtered = useMemo(() => {
+    let rows = [...trail];
+
+    // Search
+    if (search) {
+      const q = search.toLowerCase();
+      rows = rows.filter(r =>
+        Object.values(r).some(v => String(v).toLowerCase().includes(q))
+      );
+    }
+
+    // Filters
+    if (statusFilter !== "All") rows = rows.filter(r => r.status === statusFilter);
+    if (industryFilter !== "All") rows = rows.filter(r => r.industry === industryFilter);
+    if (confidenceFilter !== "All") rows = rows.filter(r => r.confidence === confidenceFilter);
+    if (dateFrom) rows = rows.filter(r => r.timestamp >= dateFrom);
+    if (dateTo) rows = rows.filter(r => r.timestamp <= dateTo + "T23:59:59");
+
+    // Sort
+    rows.sort((a, b) => {
+      let aVal = a[sortCol] || "";
+      let bVal = b[sortCol] || "";
+      if (sortCol === "unitPrice" || sortCol === "total" || sortCol === "quantity") {
+        aVal = parseFloat(aVal) || 0;
+        bVal = parseFloat(bVal) || 0;
+      } else {
+        aVal = String(aVal).toLowerCase();
+        bVal = String(bVal).toLowerCase();
+      }
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return rows;
+  }, [trail, search, statusFilter, industryFilter, confidenceFilter, dateFrom, dateTo, sortCol, sortDir]);
+
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const sortIcon = (col) => sortCol === col ? (sortDir === "asc" ? " ^" : " v") : "";
+
+  const inp = {
+    padding: "8px 12px", background: "#1a0f3d",
+    border: '1px solid rgba(139,92,246,0.45)',
+    borderRadius: 6, fontSize: 13, color: '#f1f5f9',
+    fontFamily: "'DM Mono', monospace", boxSizing: "border-box", outline: "none",
+  };
+
+  const card = {
+    background: '#16093a', border: '1px solid rgba(139,92,246,0.5)',
+    borderRadius: 12, padding: 24, backdropFilter: "blur(12px)",
+  };
+
+  const statusColor = (s) => {
+    if (s === "Approved") return B.success;
+    if (s === "Escalated") return B.warning;
+    if (s === "Rejected") return B.danger;
+    return B.muted;
+  };
+
+  const thStyle = {
+    padding: "10px 12px", textAlign: "left", fontSize: 11, letterSpacing: 2,
+    textTransform: "uppercase", color: '#a78bfa', cursor: "pointer",
+    borderBottom: '2px solid rgba(139,92,246,0.4)', whiteSpace: "nowrap",
+    userSelect: "none",
+  };
+
+  const tdStyle = {
+    padding: "10px 12px", fontSize: 13, color: B.text,
+    borderBottom: '1px solid rgba(139,92,246,0.15)', whiteSpace: "nowrap",
+  };
+
+  // Stats
+  const totalQuotes = trail.length;
+  const approvedCount = trail.filter(r => r.status === "Approved").length;
+  const escalatedCount = trail.filter(r => r.status === "Escalated").length;
+  const totalRevenue = trail.filter(r => r.status === "Approved").reduce((s, r) => s + (parseFloat(r.total) || 0), 0);
+
+  return (
+    <div style={{ animation: "fadeUp 0.4s ease" }}>
+      {/* Stats Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        {[
+          ["Total Quotes", totalQuotes, B.primary],
+          ["Approved", approvedCount, B.success],
+          ["Escalated", escalatedCount, B.warning],
+          ["Revenue", `$${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, B.cyan],
+        ].map(([label, value, color]) => (
+          <div key={label} style={{ ...card, padding: 18, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: color }} />
+            <div style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 6 }}>{label}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 26, fontWeight: 800, color }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ ...card, marginBottom: 20, padding: 18 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <div style={{ flex: 2, minWidth: 200 }}>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>Search</label>
+            <input
+              style={{ ...inp, width: "100%" }}
+              placeholder="Search by customer, ID, material..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>Status</label>
+            <select style={inp} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              {statuses.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>Industry</label>
+            <select style={inp} value={industryFilter} onChange={e => setIndustryFilter(e.target.value)}>
+              {industries.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>Confidence</label>
+            <select style={inp} value={confidenceFilter} onChange={e => setConfidenceFilter(e.target.value)}>
+              {["All","HIGH","MEDIUM","LOW"].map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>From</label>
+            <input type="date" style={inp} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>To</label>
+            <input type="date" style={inp} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          </div>
+          <button
+            onClick={() => exportToCSV(filtered)}
+            style={{
+              padding: "9px 18px", background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+              color: "#fff", border: "none", borderRadius: 6, fontSize: 11,
+              letterSpacing: 2, textTransform: "uppercase", cursor: "pointer",
+              fontFamily: "'DM Mono', monospace", fontWeight: 600,
+              boxShadow: "0 0 12px rgba(139,92,246,0.4)",
+            }}
+          >EXPORT CSV</button>
+          <button
+            onClick={() => { setSearch(""); setStatusFilter("All"); setIndustryFilter("All"); setConfidenceFilter("All"); setDateFrom(""); setDateTo(""); }}
+            style={{
+              padding: "9px 14px", background: B.glass, color: B.muted,
+              border: '1px solid rgba(139,92,246,0.45)', borderRadius: 6, fontSize: 11,
+              letterSpacing: 2, textTransform: "uppercase", cursor: "pointer",
+              fontFamily: "'DM Mono', monospace",
+            }}
+          >CLEAR</button>
+        </div>
+      </div>
+
+      {/* Results Count */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: B.muted }}>
+          Showing {filtered.length} of {trail.length} records
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ ...card, padding: 0, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 }}>
+            <thead>
+              <tr style={{ background: "rgba(139,92,246,0.08)" }}>
+                <th style={thStyle} onClick={() => handleSort("requestId")}>ID{sortIcon("requestId")}</th>
+                <th style={thStyle} onClick={() => handleSort("timestamp")}>Date{sortIcon("timestamp")}</th>
+                <th style={thStyle} onClick={() => handleSort("status")}>Status{sortIcon("status")}</th>
+                <th style={thStyle} onClick={() => handleSort("customer")}>Customer{sortIcon("customer")}</th>
+                <th style={thStyle} onClick={() => handleSort("industry")}>Industry{sortIcon("industry")}</th>
+                <th style={thStyle} onClick={() => handleSort("part")}>Part{sortIcon("part")}</th>
+                <th style={thStyle} onClick={() => handleSort("material")}>Material{sortIcon("material")}</th>
+                <th style={thStyle} onClick={() => handleSort("quantity")}>Qty{sortIcon("quantity")}</th>
+                <th style={thStyle} onClick={() => handleSort("unitPrice")}>Unit Price{sortIcon("unitPrice")}</th>
+                <th style={thStyle} onClick={() => handleSort("total")}>Total{sortIcon("total")}</th>
+                <th style={thStyle} onClick={() => handleSort("confidence")}>Conf.{sortIcon("confidence")}</th>
+                <th style={thStyle} onClick={() => handleSort("submittedBy")}>Rep{sortIcon("submittedBy")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={12} style={{ ...tdStyle, textAlign: "center", padding: 40, color: B.muted }}>
+                    {trail.length === 0 ? "No quotes yet. Submit a quote to begin tracking." : "No records match your filters."}
+                  </td>
+                </tr>
+              ) : filtered.map((r, i) => (
+                <tr
+                  key={r.requestId + i}
+                  onClick={() => setSelectedRow(selectedRow === i ? null : i)}
+                  style={{
+                    cursor: "pointer",
+                    background: selectedRow === i ? "rgba(139,92,246,0.12)" : i % 2 === 0 ? "transparent" : "rgba(139,92,246,0.03)",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={e => { if (selectedRow !== i) e.currentTarget.style.background = "rgba(139,92,246,0.08)"; }}
+                  onMouseLeave={e => { if (selectedRow !== i) e.currentTarget.style.background = i % 2 === 0 ? "transparent" : "rgba(139,92,246,0.03)"; }}
+                >
+                  <td style={{ ...tdStyle, color: B.primary400, fontWeight: 600 }}>{r.requestId}</td>
+                  <td style={tdStyle}>{new Date(r.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
+                  <td style={tdStyle}><Badge label={r.status} color={statusColor(r.status)} /></td>
+                  <td style={{ ...tdStyle, fontWeight: 500 }}>{r.customer}</td>
+                  <td style={tdStyle}>{r.industry}</td>
+                  <td style={{ ...tdStyle, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>{r.part}</td>
+                  <td style={tdStyle}>{r.material}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{r.quantity}</td>
+                  <td style={{ ...tdStyle, textAlign: "right", color: B.primary400, fontWeight: 600 }}>${r.unitPrice}</td>
+                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>${parseFloat(r.total).toLocaleString()}</td>
+                  <td style={tdStyle}>
+                    <Badge
+                      label={r.confidence}
+                      color={r.confidence === "HIGH" ? B.success : r.confidence === "MEDIUM" ? B.warning : B.danger}
+                    />
+                  </td>
+                  <td style={tdStyle}>{r.submittedBy}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Expanded Row Detail */}
+      {selectedRow !== null && filtered[selectedRow] && (
+        <div style={{ ...card, marginTop: 16, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${statusColor(filtered[selectedRow].status)}, ${B.primary})` }} />
+          <div style={{ fontSize: 11, letterSpacing: 2, color: '#a855f7', textTransform: "uppercase", marginBottom: 16, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>
+            Quote Detail — {filtered[selectedRow].requestId}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            {[
+              ["Request ID", filtered[selectedRow].requestId],
+              ["Timestamp", new Date(filtered[selectedRow].timestamp).toLocaleString()],
+              ["Status", filtered[selectedRow].status],
+              ["Submitted By", filtered[selectedRow].submittedBy],
+              ["Customer", filtered[selectedRow].customer],
+              ["Email", filtered[selectedRow].customerEmail],
+              ["Industry", filtered[selectedRow].industry],
+              ["Part", filtered[selectedRow].part],
+              ["Material", filtered[selectedRow].material],
+              ["Size", filtered[selectedRow].size],
+              ["Quantity", filtered[selectedRow].quantity],
+              ["Finish", filtered[selectedRow].finish],
+              ["Marking", filtered[selectedRow].marking],
+              ["Rush", filtered[selectedRow].rush],
+              ["Unit Price", `$${filtered[selectedRow].unitPrice}`],
+              ["Price Range", filtered[selectedRow].priceRange],
+              ["Total", `$${filtered[selectedRow].total}`],
+              ["Confidence", filtered[selectedRow].confidence],
+              ["Approved By", filtered[selectedRow].approvedBy || "—"],
+              ["Notes", filtered[selectedRow].notes || "—"],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", borderBottom: '1px solid rgba(139,92,246,0.12)' }}>
+                <span style={{ fontSize: 12, color: B.muted }}>{k}</span>
+                <span style={{ fontSize: 12, color: B.text, fontWeight: 500, textAlign: "right", maxWidth: "60%", overflow: "hidden", textOverflow: "ellipsis" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -171,6 +490,29 @@ function OwnerApproval({ data }) {
           approvedBy: "Owner",
           timestamp: new Date().toISOString(),
         }),
+      });
+      // Log to audit trail
+      saveAuditEntry({
+        requestId: data.requestId,
+        timestamp: new Date().toISOString(),
+        status: "Approved",
+        submittedBy: data.submittedBy,
+        customer: data.customer,
+        customerEmail: data.customerEmail,
+        industry: data.industry,
+        part: data.part,
+        material: data.material,
+        size: data.size,
+        quantity: data.quantity,
+        finish: data.finish,
+        marking: data.marking,
+        rush: data.rush,
+        notes: data.notes || "",
+        unitPrice: modifiedPrice,
+        priceRange: data.priceRange,
+        total: modifiedTotal,
+        confidence: data.confidence,
+        approvedBy: "Owner" + (priceChanged ? ` (modified from $${data.unitPrice})` : ""),
       });
       setDone(true);
     } catch (err) {
@@ -350,6 +692,7 @@ export default function App() {
 
   // ── All hooks must be called unconditionally ──
   const [approvalData, setApprovalData] = useState(null);
+  const [page, setPage] = useState("quote"); // "quote" | "audit"
   const [form, setForm] = useState({
     requestId, submittedBy: "Maria Santos", submittedDate: today, status: "Pending",
     customer: "", customerEmail: "", industry: "Aerospace", part: "Data Plate - Engine Serial",
@@ -397,6 +740,29 @@ export default function App() {
     setTimeout(() => setStep("result"), 600);
   };
 
+  const buildAuditEntry = (action) => ({
+    requestId: form.requestId,
+    timestamp: new Date().toISOString(),
+    status: action === "approved" ? "Approved" : action === "escalated" ? "Escalated" : "Rejected",
+    submittedBy: form.submittedBy,
+    customer: form.customer,
+    customerEmail: form.customerEmail,
+    industry: form.industry,
+    part: form.part,
+    material: form.material,
+    size: `${form.length} x ${form.width} x ${form.thickness} in`,
+    quantity: form.quantity,
+    finish: form.finish,
+    marking: form.marking,
+    rush: form.rush,
+    notes: form.notes,
+    unitPrice: pricing?.unitPrice || "",
+    priceRange: pricing ? `${pricing.low} - ${pricing.high}` : "",
+    total: pricing?.total || "",
+    confidence: pricing?.confidence || "",
+    approvedBy: action === "approved" ? form.submittedBy : "",
+  });
+
   const sendToWebhook = async (action) => {
     setSending(action);
     const webhookUrl = action === "escalated"
@@ -432,6 +798,8 @@ export default function App() {
           timestamp: new Date().toISOString(),
         }),
       });
+      // Save to audit trail
+      saveAuditEntry(buildAuditEntry(action));
       setSending("");
       alert(action === "approved" ? "Quote approved and sent!" : "Quote escalated to owner!");
     } catch (err) {
@@ -441,10 +809,30 @@ export default function App() {
     }
   };
 
+  const handleReject = () => {
+    saveAuditEntry(buildAuditEntry("rejected"));
+    alert("Quote rejected.");
+    reset();
+  };
+
   const reset = () => {
     setStep("form"); setPricing(null);
     setForm(f => ({ ...f, customer: "", customerEmail: "", length: "", width: "", quantity: "", notes: "", requestId: "QR-" + Date.now().toString(36).toUpperCase() }));
   };
+
+  const navBtn = (label, target) => (
+    <button
+      onClick={() => { setPage(target); }}
+      style={{
+        padding: "6px 16px", background: page === target ? "rgba(139,92,246,0.2)" : "transparent",
+        border: page === target ? '1px solid rgba(139,92,246,0.5)' : '1px solid transparent',
+        borderRadius: 6, fontSize: 12, letterSpacing: 2, textTransform: "uppercase",
+        cursor: "pointer", color: page === target ? B.primary400 : B.muted,
+        fontFamily: "'DM Mono', monospace", fontWeight: page === target ? 600 : 400,
+        transition: "all 0.2s",
+      }}
+    >{label}</button>
+  );
 
   return (
     <div style={{ background: B.bg, minHeight: "100vh", fontFamily: "'DM Mono', monospace", position: "relative", overflow: "hidden" }}>
@@ -480,220 +868,239 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {navBtn("New Quote", "quote")}
+          {navBtn("Audit Trail", "audit")}
+          <div style={{ width: 1, height: 20, background: "rgba(139,92,246,0.3)", margin: "0 4px" }} />
           <div style={{ width: 7, height: 7, borderRadius: "50%", background: B.success, boxShadow: `0 0 8px ${B.success}` }} />
           <span style={{ color: B.muted, fontSize: 14, letterSpacing: 1 }}>LIVE</span>
         </div>
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: page === "audit" ? 1200 : 960, margin: "0 auto", padding: "32px 24px", transition: "max-width 0.3s" }}>
 
-        {/* ── FORM ── */}
-        {step === "form" && (
-          <div style={{ animation: "fadeUp 0.4s ease" }}>
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 26, fontWeight: 800, color: B.text, letterSpacing: -0.5 }}>New Quote Request</div>
-              <div style={{ color: B.muted, fontSize: 13, marginTop: 5 }}>Fill in the details below — AI will recommend a competitive price based on historical quote data.</div>
+        {/* ── AUDIT TRAIL ── */}
+        {page === "audit" && (
+          <div>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 26, fontWeight: 800, color: B.text, letterSpacing: -0.5 }}>Audit Trail</div>
+              <div style={{ color: B.muted, fontSize: 13, marginTop: 5 }}>Complete history of all quotation actions — search, filter, and export for auditing.</div>
             </div>
-
-            {error && (
-              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderLeft: "3px solid #ef4444", borderRadius: 6, padding: "10px 14px", marginBottom: 20, fontSize: 14, color: B.danger }}>{error}</div>
-            )}
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              {/* LEFT */}
-              <div style={card}>
-                <div style={{ fontSize: 13, letterSpacing: 2, color: '#c4b5fd', fontSize: 11, textTransform: "uppercase", marginBottom: 18, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Customer Details</div>
-                <Field label="Submitted By">
-                  <input style={inp} value={form.submittedBy} onChange={e => set("submittedBy", e.target.value)} />
-                </Field>
-                <Field label="Customer Name" required>
-                  <input style={inp} placeholder="e.g. Bell Helicopter" value={form.customer} onChange={e => set("customer", e.target.value)} />
-                </Field>
-                <Field label="Customer Email" required>
-                  <input style={inp} type="email" placeholder="e.g. procurement@bellhelicopter.com" value={form.customerEmail} onChange={e => set("customerEmail", e.target.value)} />
-                </Field>
-                <Field label="Industry" required>
-                  <select style={inp} value={form.industry} onChange={e => set("industry", e.target.value)}>
-                    {["Aerospace","Automotive","Defense","Medical","Industrial"].map(o => <option key={o}>{o}</option>)}
-                  </select>
-                </Field>
-                <Field label="Part Name" required>
-                  <select style={inp} value={form.part} onChange={e => set("part", e.target.value)}>
-                    {["Data Plate - Engine Serial","VIN Plate - Cab Door","Equipment ID Plate","Warning Label","Device Serial Plate","Wiring Harness Tag","Equipment Nameplate","Airframe Plate","Cab Interior Plate","Surgical Instrument Tag","Interior Panel Placard","Axle Rating Plate","Implant ID Tag","Landing Gear Plate","Bumper ID Plate","Electronics Panel ID","Helicopter Interior Tag","Rotor Blade Tag","Vehicle ID Plate","Diagnostic Equipment Tag"].map(o => <option key={o}>{o}</option>)}
-                  </select>
-                </Field>
-                <Field label="Special Requirements">
-                  <textarea style={{ ...inp, height: 66, resize: "none" }} placeholder="e.g. AS9100 required, ITAR controlled, FDA UDI..." value={form.notes} onChange={e => set("notes", e.target.value)} />
-                </Field>
-              </div>
-
-              {/* RIGHT */}
-              <div style={card}>
-                <div style={{ fontSize: 13, letterSpacing: 2, color: '#c4b5fd', fontSize: 11, textTransform: "uppercase", marginBottom: 18, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Part Specifications</div>
-                <Field label="Material" required>
-                  <select style={inp} value={form.material} onChange={e => set("material", e.target.value)}>
-                    {["Aluminum","Stainless Steel","Titanium","Polyester","Brass"].map(o => <option key={o}>{o}</option>)}
-                  </select>
-                </Field>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  <Field label="Length (in)" required>
-                    <input style={inp} type="number" placeholder="4" value={form.length} onChange={e => set("length", e.target.value)} />
-                  </Field>
-                  <Field label="Width (in)" required>
-                    <input style={inp} type="number" placeholder="2" value={form.width} onChange={e => set("width", e.target.value)} />
-                  </Field>
-                  <Field label="Thickness (in)">
-                    <input style={inp} type="number" placeholder="0.063" value={form.thickness} onChange={e => set("thickness", e.target.value)} />
-                  </Field>
-                </div>
-                <Field label="Quantity" required>
-                  <input style={inp} type="number" placeholder="75" value={form.quantity} onChange={e => set("quantity", e.target.value)} />
-                </Field>
-                <Field label="Finish">
-                  <select style={inp} value={form.finish} onChange={e => set("finish", e.target.value)}>
-                    {["Anodized Black","Anodized","Brushed","Electropolished","Paint","Alodine","Passivated","None"].map(o => <option key={o}>{o}</option>)}
-                  </select>
-                </Field>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <Field label="Marking Type">
-                    <select style={inp} value={form.marking} onChange={e => set("marking", e.target.value)}>
-                      {["Laser Engraved","Chemical Etch","Embossed","Silkscreen","Digital Print"].map(o => <option key={o}>{o}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="Rush Order">
-                    <select style={inp} value={form.rush} onChange={e => set("rush", e.target.value)}>
-                      <option>No</option><option>Yes</option>
-                    </select>
-                  </Field>
-                </div>
-              </div>
-            </div>
-
-            <button onClick={submit} style={{
-              width: "100%", marginTop: 20, padding: "15px",
-              background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
-              color: "#fff", border: "none", borderRadius: 8, fontSize: 13,
-              letterSpacing: 3, textTransform: "uppercase", cursor: "pointer",
-              fontFamily: "'DM Mono', monospace", fontWeight: 500,
-              boxShadow: "0 0 28px rgba(139,92,246,0.5)",
-            }}>▶ Generate AI Price Recommendation</button>
+            <AuditTrail onBack={() => setPage("quote")} />
           </div>
         )}
 
-        {/* ── CALCULATING ── */}
-        {step === "calculating" && (
-          <div style={{ textAlign: "center", padding: "100px 0", animation: "fadeUp 0.4s ease" }}>
-            <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 28px" }}>
-              <div style={{ position: "absolute", inset: 0, border: "2px solid rgba(139,92,246,0.2)", borderRadius: "50%" }} />
-              <div style={{ position: "absolute", inset: 0, border: "2px solid transparent", borderTopColor: B.primary, borderRadius: "50%", animation: "spin 0.9s linear infinite" }} />
-              <div style={{ position: "absolute", inset: 10, border: "1px solid transparent", borderTopColor: B.pink, borderRadius: "50%", animation: "spin 0.6s linear infinite reverse" }} />
-            </div>
-            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, color: B.text, fontWeight: 800, marginBottom: 8 }}>Analyzing Historical Data</div>
-            <div style={{ color: B.muted, fontSize: 13, letterSpacing: 1, animation: "pulse 1.5s ease infinite" }}>Claude AI is generating your pricing recommendation…</div>
-          </div>
-        )}
+        {/* ── QUOTE FORM ── */}
+        {page === "quote" && (
+          <>
+            {/* ── FORM ── */}
+            {step === "form" && (
+              <div style={{ animation: "fadeUp 0.4s ease" }}>
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 26, fontWeight: 800, color: B.text, letterSpacing: -0.5 }}>New Quote Request</div>
+                  <div style={{ color: B.muted, fontSize: 13, marginTop: 5 }}>Fill in the details below — AI will recommend a competitive price based on historical quote data.</div>
+                </div>
 
-        {/* ── RESULT ── */}
-        {step === "result" && pricing && (
-          <div style={{ animation: "fadeUp 0.4s ease" }}>
+                {error && (
+                  <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderLeft: "3px solid #ef4444", borderRadius: 6, padding: "10px 14px", marginBottom: 20, fontSize: 14, color: B.danger }}>{error}</div>
+                )}
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-              <div>
-                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 800, color: B.text, letterSpacing: -0.3 }}>Quote Recommendation</div>
-                <div style={{ color: B.muted, fontSize: 13, marginTop: 4 }}>{form.customer} · {form.industry} · {form.part}</div>
-              </div>
-              <button onClick={reset} style={{ padding: "8px 16px", background: B.glass, border: '1px solid rgba(139,92,246,0.45)', borderRadius: 6, fontSize: 14, letterSpacing: 2, cursor: "pointer", color: B.muted, fontFamily: "'DM Mono', monospace", backdropFilter: "blur(8px)" }}>↺ NEW QUOTE</button>
-            </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                  {/* LEFT */}
+                  <div style={card}>
+                    <div style={{ fontSize: 11, letterSpacing: 2, color: '#c4b5fd', textTransform: "uppercase", marginBottom: 18, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Customer Details</div>
+                    <Field label="Submitted By">
+                      <input style={inp} value={form.submittedBy} onChange={e => set("submittedBy", e.target.value)} />
+                    </Field>
+                    <Field label="Customer Name" required>
+                      <input style={inp} placeholder="e.g. Bell Helicopter" value={form.customer} onChange={e => set("customer", e.target.value)} />
+                    </Field>
+                    <Field label="Customer Email" required>
+                      <input style={inp} type="email" placeholder="e.g. procurement@bellhelicopter.com" value={form.customerEmail} onChange={e => set("customerEmail", e.target.value)} />
+                    </Field>
+                    <Field label="Industry" required>
+                      <select style={inp} value={form.industry} onChange={e => set("industry", e.target.value)}>
+                        {["Aerospace","Automotive","Defense","Medical","Industrial"].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Part Name" required>
+                      <select style={inp} value={form.part} onChange={e => set("part", e.target.value)}>
+                        {["Data Plate - Engine Serial","VIN Plate - Cab Door","Equipment ID Plate","Warning Label","Device Serial Plate","Wiring Harness Tag","Equipment Nameplate","Airframe Plate","Cab Interior Plate","Surgical Instrument Tag","Interior Panel Placard","Axle Rating Plate","Implant ID Tag","Landing Gear Plate","Bumper ID Plate","Electronics Panel ID","Helicopter Interior Tag","Rotor Blade Tag","Vehicle ID Plate","Diagnostic Equipment Tag"].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Special Requirements">
+                      <textarea style={{ ...inp, height: 66, resize: "none" }} placeholder="e.g. AS9100 required, ITAR controlled, FDA UDI..." value={form.notes} onChange={e => set("notes", e.target.value)} />
+                    </Field>
+                  </div>
 
-            {/* Price strip */}
-            <div style={{ background: "linear-gradient(135deg, #0f0729, rgba(139,92,246,0.18))", border: '1px solid rgba(139,92,246,0.45)', borderRadius: 12, padding: "28px 36px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 0 40px rgba(139,92,246,0.15)" }}>
-              <div>
-                <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6 }}>Recommended Unit Price</div>
-                <div style={{ background: "linear-gradient(135deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 52, fontWeight: 800, lineHeight: 1 }}>${pricing.unitPrice}</div>
-                <div style={{ color: B.muted, fontSize: 13, marginTop: 6 }}>Range: ${pricing.low} — ${pricing.high} / unit</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6 }}>Total Estimate</div>
-                <div style={{ color: B.text, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 36, fontWeight: 800 }}>${pricing.total}</div>
-                <div style={{ color: B.muted, fontSize: 13, marginTop: 4 }}>for {form.quantity} units</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 10 }}>Confidence</div>
-                <Badge label={pricing.confidence} color={pricing.confidence === "HIGH" ? B.success : pricing.confidence === "MEDIUM" ? B.warning : B.danger} glow />
-                <div style={{ color: B.muted, fontSize: 14, marginTop: 8 }}>{pricing.matchCount} matches</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 10 }}>Owner Approval</div>
-                <Badge label={pricing.escalate ? "REQUIRED" : "NOT NEEDED"} color={pricing.escalate ? B.danger : B.success} glow />
-                {pricing.rushApplied && <div style={{ color: B.warning, fontSize: 13, marginTop: 8, letterSpacing: 1 }}>+25% RUSH</div>}
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-              {/* Comparables */}
-              <div style={card}>
-                <div style={{ fontSize: 13, letterSpacing: 2, color: '#67e8f9', fontSize: 11, textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Comparable Quotes</div>
-                {pricing.comparables.length === 0 ? (
-                  <div style={{ color: B.muted, fontSize: 12 }}>No direct comparables — manual review recommended.</div>
-                ) : pricing.comparables.map((q, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 8px", borderBottom: '1px solid rgba(139,92,246,0.3)' }}>
-                    <div>
-                      <div style={{ fontSize: 14, color: '#f1f5f9', fontWeight: 500 }}>{q.customer}</div>
-                      <div style={{ fontSize: 14, color: B.muted, marginTop: 2 }}>{q.material} · {q.size_length_in}×{q.size_width_in}in · qty {q.quantity}</div>
+                  {/* RIGHT */}
+                  <div style={card}>
+                    <div style={{ fontSize: 11, letterSpacing: 2, color: '#c4b5fd', textTransform: "uppercase", marginBottom: 18, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Part Specifications</div>
+                    <Field label="Material" required>
+                      <select style={inp} value={form.material} onChange={e => set("material", e.target.value)}>
+                        {["Aluminum","Stainless Steel","Titanium","Polyester","Brass"].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </Field>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                      <Field label="Length (in)" required>
+                        <input style={inp} type="number" placeholder="4" value={form.length} onChange={e => set("length", e.target.value)} />
+                      </Field>
+                      <Field label="Width (in)" required>
+                        <input style={inp} type="number" placeholder="2" value={form.width} onChange={e => set("width", e.target.value)} />
+                      </Field>
+                      <Field label="Thickness (in)">
+                        <input style={inp} type="number" placeholder="0.063" value={form.thickness} onChange={e => set("thickness", e.target.value)} />
+                      </Field>
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, background: "linear-gradient(135deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>${q.unit_price_usd}</div>
+                    <Field label="Quantity" required>
+                      <input style={inp} type="number" placeholder="75" value={form.quantity} onChange={e => set("quantity", e.target.value)} />
+                    </Field>
+                    <Field label="Finish">
+                      <select style={inp} value={form.finish} onChange={e => set("finish", e.target.value)}>
+                        {["Anodized Black","Anodized","Brushed","Electropolished","Paint","Alodine","Passivated","None"].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </Field>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <Field label="Marking Type">
+                        <select style={inp} value={form.marking} onChange={e => set("marking", e.target.value)}>
+                          {["Laser Engraved","Chemical Etch","Embossed","Silkscreen","Digital Print"].map(o => <option key={o}>{o}</option>)}
+                        </select>
+                      </Field>
+                      <Field label="Rush Order">
+                        <select style={inp} value={form.rush} onChange={e => set("rush", e.target.value)}>
+                          <option>No</option><option>Yes</option>
+                        </select>
+                      </Field>
+                    </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Summary */}
-              <div style={card}>
-                <div style={{ fontSize: 13, letterSpacing: 2, color: '#67e8f9', fontSize: 11, textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Request Summary</div>
-                {[
-                  ["Submitted By", form.submittedBy],
-                  ["Customer", form.customer],
-                  ["Email", form.customerEmail],
-                  ["Industry", form.industry],
-                  ["Part Name", form.part],
-                  ["Material", form.material],
-                  ["Size", `${form.length} × ${form.width} × ${form.thickness} in`],
-                  ["Quantity", form.quantity],
-                  ["Finish", form.finish],
-                  ["Marking", form.marking],
-                  ["Rush Order", form.rush],
-                ].map(([k, v]) => (
-                  <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: '1px solid rgba(139,92,246,0.3)' }}>
-                    <span style={{ fontSize: 14, color: B.muted }}>{k}</span>
-                    <span style={{ fontSize: 13, color: B.text }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* AI Rationale */}
-            {pricing.rationale && pricing.rationale.length > 0 && (
-              <div style={{ ...card, marginBottom: 16, position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #7c3aed, #a855f7, #6366f1)" }} />
-                <div style={{ fontSize: 11, letterSpacing: 2, color: '#a855f7', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 14 }}>⚡</span> AI Pricing Rationale
                 </div>
-                {pricing.rationale.map((line, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < pricing.rationale.length - 1 ? 10 : 0 }}>
-                    <span style={{ color: B.primary400, fontSize: 10, marginTop: 5, flexShrink: 0 }}>●</span>
-                    <p style={{ margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.6 }}>{line}</p>
-                  </div>
-                ))}
+
+                <button onClick={submit} style={{
+                  width: "100%", marginTop: 20, padding: "15px",
+                  background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+                  color: "#fff", border: "none", borderRadius: 8, fontSize: 13,
+                  letterSpacing: 3, textTransform: "uppercase", cursor: "pointer",
+                  fontFamily: "'DM Mono', monospace", fontWeight: 500,
+                  boxShadow: "0 0 28px rgba(139,92,246,0.5)",
+                }}>▶ Generate AI Price Recommendation</button>
               </div>
             )}
 
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={() => sendToWebhook("approved")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(34,197,94,0.3)", opacity: sending ? 0.6 : 1 }}>{sending === "approved" ? "SENDING…" : "✓ APPROVE & SEND"}</button>
-              <button onClick={() => sendToWebhook("escalated")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #8b5cf6)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(139,92,246,0.4)", opacity: sending ? 0.6 : 1 }}>{sending === "escalated" ? "SENDING…" : "↑ ESCALATE TO OWNER"}</button>
-              <button onClick={reset} style={{ padding: "14px 24px", background: B.glass, color: B.muted, border: '1px solid rgba(139,92,246,0.45)', borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Mono', monospace", backdropFilter: "blur(8px)" }}>✕ REJECT</button>
-            </div>
+            {/* ── CALCULATING ── */}
+            {step === "calculating" && (
+              <div style={{ textAlign: "center", padding: "100px 0", animation: "fadeUp 0.4s ease" }}>
+                <div style={{ position: "relative", width: 64, height: 64, margin: "0 auto 28px" }}>
+                  <div style={{ position: "absolute", inset: 0, border: "2px solid rgba(139,92,246,0.2)", borderRadius: "50%" }} />
+                  <div style={{ position: "absolute", inset: 0, border: "2px solid transparent", borderTopColor: B.primary, borderRadius: "50%", animation: "spin 0.9s linear infinite" }} />
+                  <div style={{ position: "absolute", inset: 10, border: "1px solid transparent", borderTopColor: B.pink, borderRadius: "50%", animation: "spin 0.6s linear infinite reverse" }} />
+                </div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, color: B.text, fontWeight: 800, marginBottom: 8 }}>Analyzing Historical Data</div>
+                <div style={{ color: B.muted, fontSize: 13, letterSpacing: 1, animation: "pulse 1.5s ease infinite" }}>Claude AI is generating your pricing recommendation…</div>
+              </div>
+            )}
 
-          </div>
+            {/* ── RESULT ── */}
+            {step === "result" && pricing && (
+              <div style={{ animation: "fadeUp 0.4s ease" }}>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+                  <div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, fontWeight: 800, color: B.text, letterSpacing: -0.3 }}>Quote Recommendation</div>
+                    <div style={{ color: B.muted, fontSize: 13, marginTop: 4 }}>{form.customer} · {form.industry} · {form.part}</div>
+                  </div>
+                  <button onClick={reset} style={{ padding: "8px 16px", background: B.glass, border: '1px solid rgba(139,92,246,0.45)', borderRadius: 6, fontSize: 14, letterSpacing: 2, cursor: "pointer", color: B.muted, fontFamily: "'DM Mono', monospace", backdropFilter: "blur(8px)" }}>↺ NEW QUOTE</button>
+                </div>
+
+                {/* Price strip */}
+                <div style={{ background: "linear-gradient(135deg, #0f0729, rgba(139,92,246,0.18))", border: '1px solid rgba(139,92,246,0.45)', borderRadius: 12, padding: "28px 36px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 0 40px rgba(139,92,246,0.15)" }}>
+                  <div>
+                    <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6 }}>Recommended Unit Price</div>
+                    <div style={{ background: "linear-gradient(135deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 52, fontWeight: 800, lineHeight: 1 }}>${pricing.unitPrice}</div>
+                    <div style={{ color: B.muted, fontSize: 13, marginTop: 6 }}>Range: ${pricing.low} — ${pricing.high} / unit</div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6 }}>Total Estimate</div>
+                    <div style={{ color: B.text, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 36, fontWeight: 800 }}>${pricing.total}</div>
+                    <div style={{ color: B.muted, fontSize: 13, marginTop: 4 }}>for {form.quantity} units</div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 10 }}>Confidence</div>
+                    <Badge label={pricing.confidence} color={pricing.confidence === "HIGH" ? B.success : pricing.confidence === "MEDIUM" ? B.warning : B.danger} glow />
+                    <div style={{ color: B.muted, fontSize: 14, marginTop: 8 }}>{pricing.matchCount} matches</div>
+                  </div>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ color: B.muted, fontSize: 13, letterSpacing: 3, textTransform: "uppercase", marginBottom: 10 }}>Owner Approval</div>
+                    <Badge label={pricing.escalate ? "REQUIRED" : "NOT NEEDED"} color={pricing.escalate ? B.danger : B.success} glow />
+                    {pricing.rushApplied && <div style={{ color: B.warning, fontSize: 13, marginTop: 8, letterSpacing: 1 }}>+25% RUSH</div>}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  {/* Comparables */}
+                  <div style={card}>
+                    <div style={{ fontSize: 11, letterSpacing: 2, color: '#67e8f9', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Comparable Quotes</div>
+                    {pricing.comparables.length === 0 ? (
+                      <div style={{ color: B.muted, fontSize: 12 }}>No direct comparables — manual review recommended.</div>
+                    ) : pricing.comparables.map((q, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 8px", borderBottom: '1px solid rgba(139,92,246,0.3)' }}>
+                        <div>
+                          <div style={{ fontSize: 14, color: '#f1f5f9', fontWeight: 500 }}>{q.customer}</div>
+                          <div style={{ fontSize: 14, color: B.muted, marginTop: 2 }}>{q.material} · {q.size_length_in}×{q.size_width_in}in · qty {q.quantity}</div>
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 700, background: "linear-gradient(135deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>${q.unit_price_usd}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Summary */}
+                  <div style={card}>
+                    <div style={{ fontSize: 11, letterSpacing: 2, color: '#67e8f9', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8 }}>Request Summary</div>
+                    {[
+                      ["Submitted By", form.submittedBy],
+                      ["Customer", form.customer],
+                      ["Email", form.customerEmail],
+                      ["Industry", form.industry],
+                      ["Part Name", form.part],
+                      ["Material", form.material],
+                      ["Size", `${form.length} × ${form.width} × ${form.thickness} in`],
+                      ["Quantity", form.quantity],
+                      ["Finish", form.finish],
+                      ["Marking", form.marking],
+                      ["Rush Order", form.rush],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: '1px solid rgba(139,92,246,0.3)' }}>
+                        <span style={{ fontSize: 14, color: B.muted }}>{k}</span>
+                        <span style={{ fontSize: 13, color: B.text }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AI Rationale */}
+                {pricing.rationale && pricing.rationale.length > 0 && (
+                  <div style={{ ...card, marginBottom: 16, position: "relative", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #7c3aed, #a855f7, #6366f1)" }} />
+                    <div style={{ fontSize: 11, letterSpacing: 2, color: '#a855f7', textTransform: "uppercase", marginBottom: 14, borderBottom: '1px solid rgba(139,92,246,0.3)', paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14 }}>⚡</span> AI Pricing Rationale
+                    </div>
+                    {pricing.rationale.map((line, i) => (
+                      <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < pricing.rationale.length - 1 ? 10 : 0 }}>
+                        <span style={{ color: B.primary400, fontSize: 10, marginTop: 5, flexShrink: 0 }}>●</span>
+                        <p style={{ margin: 0, fontSize: 13, color: '#cbd5e1', lineHeight: 1.6 }}>{line}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button onClick={() => sendToWebhook("approved")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #16a34a, #22c55e)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(34,197,94,0.3)", opacity: sending ? 0.6 : 1 }}>{sending === "approved" ? "SENDING…" : "✓ APPROVE & SEND"}</button>
+                  <button onClick={() => sendToWebhook("escalated")} disabled={!!sending} style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #7c3aed, #8b5cf6)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: "'DM Mono', monospace", boxShadow: "0 0 20px rgba(139,92,246,0.4)", opacity: sending ? 0.6 : 1 }}>{sending === "escalated" ? "SENDING…" : "↑ ESCALATE TO OWNER"}</button>
+                  <button onClick={handleReject} style={{ padding: "14px 24px", background: B.glass, color: B.muted, border: '1px solid rgba(139,92,246,0.45)', borderRadius: 8, fontSize: 13, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer", fontFamily: "'DM Mono', monospace", backdropFilter: "blur(8px)" }}>✕ REJECT</button>
+                </div>
+
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
