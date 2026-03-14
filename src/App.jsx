@@ -2,26 +2,26 @@ import { useState, useEffect, useMemo } from "react";
 
 // ── BRAND TOKENS — CUEGENT AI ────────────────────────────────────────────
 const B = {
-  bg:        "#06080c",
-  surface:   "#0d1117",
-  card:      "#141b24",
-  glass:     "rgba(255,255,255,0.03)",
-  border:    "rgba(56,189,248,0.15)",
-  borderHi:  "rgba(56,189,248,0.35)",
-  primary:   "#38bdf8",
-  primary600:"#0284c7",
-  primary400:"#7dd3fc",
-  primary200:"#bae6fd",
-  accent:    "#f59e0b",
-  accent400: "#fbbf24",
-  teal:      "#2dd4bf",
-  text:      "#e8edf3",
-  textBright:"#f8fafc",
-  muted:     "#5c6b7f",
-  mutedLight:"#8494a7",
-  success:   "#34d399",
-  danger:    "#fb7185",
-  warning:   "#fbbf24",
+  bg:        "#f5f0e8",
+  surface:   "#ece5d8",
+  card:      "#ffffff",
+  glass:     "rgba(0,0,0,0.02)",
+  border:    "rgba(139,109,82,0.18)",
+  borderHi:  "rgba(139,109,82,0.35)",
+  primary:   "#b5451b",
+  primary600:"#943a17",
+  primary400:"#c75d33",
+  primary200:"#e8a98a",
+  accent:    "#b5451b",
+  accent400: "#c75d33",
+  teal:      "#5a7a3a",
+  text:      "#2d2a26",
+  textBright:"#1a1714",
+  muted:     "#8a7e72",
+  mutedLight:"#6b6159",
+  success:   "#5a7a3a",
+  danger:    "#c0392b",
+  warning:   "#d4820a",
 };
 
 const FONT_BODY = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
@@ -149,13 +149,13 @@ const GLOBAL_CSS = `
   @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
   input:focus, select:focus, textarea:focus {
     border-color: ${B.primary} !important;
-    box-shadow: 0 0 0 3px rgba(56,189,248,0.1) !important;
+    box-shadow: 0 0 0 3px rgba(181,69,27,0.1) !important;
   }
   select option { background: ${B.card}; color: ${B.text}; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.2); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(56,189,248,0.35); }
+  ::-webkit-scrollbar-thumb { background: rgba(139,109,82,0.25); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(139,109,82,0.4); }
 `;
 
 const cardStyle = {
@@ -185,9 +185,9 @@ function Badge({ label, color, glow }) {
   return (
     <span style={{
       fontSize: 11, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase",
-      padding: "3px 10px", background: `${color}12`, color, border: `1px solid ${color}30`,
+      padding: "3px 10px", background: `${color}18`, color, border: `1px solid ${color}35`,
       borderRadius: 6, fontFamily: FONT_MONO,
-      boxShadow: glow ? `0 0 12px ${color}25` : "none",
+      boxShadow: glow ? `0 0 12px ${color}15` : "none",
     }}>{label}</span>
   );
 }
@@ -245,7 +245,7 @@ function AuditTrail() {
   };
   const tdStyle = {
     padding: "12px 14px", fontSize: 13, color: B.text,
-    borderBottom: `1px solid rgba(56,189,248,0.06)`, whiteSpace: "nowrap",
+    borderBottom: `1px solid rgba(139,109,82,0.08)`, whiteSpace: "nowrap",
     fontFamily: FONT_BODY,
   };
 
@@ -292,11 +292,11 @@ function AuditTrail() {
           ))}
           <div>
             <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", color: B.muted, marginBottom: 4, fontFamily: FONT_MONO }}>From</label>
-            <input type="date" style={{ ...fInp, colorScheme: "dark" }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <input type="date" style={{ ...fInp, colorScheme: "light" }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", color: B.muted, marginBottom: 4, fontFamily: FONT_MONO }}>To</label>
-            <input type="date" style={{ ...fInp, colorScheme: "dark" }} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            <input type="date" style={{ ...fInp, colorScheme: "light" }} value={dateTo} onChange={e => setDateTo(e.target.value)} />
           </div>
           <button onClick={() => exportToCSV(filtered)} style={{
             padding: "8px 16px", background: `linear-gradient(135deg, ${B.primary600}, ${B.primary})`,
@@ -320,7 +320,7 @@ function AuditTrail() {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1300 }}>
             <thead>
-              <tr style={{ background: "rgba(56,189,248,0.04)" }}>
+              <tr style={{ background: "rgba(139,109,82,0.05)" }}>
                 {[["timestamp","Date"],["customer","Customer"],["part","Part"],["material","Material"],["quantity","Qty"],["unitPrice","Rec. Price"],["finalPrice","Final Price"],["confidence","Confidence"],["status","Status"],["approvedBy","Approved By"]].map(([col, label]) => (
                   <th key={col} style={thStyle} onClick={() => handleSort(col)}>{label}{sortArrow(col)}</th>
                 ))}
@@ -331,8 +331,8 @@ function AuditTrail() {
                 <tr><td colSpan={10} style={{ ...tdStyle, textAlign: "center", padding: 48, color: B.muted }}>{trail.length === 0 ? "No quotes yet." : "No records match your filters."}</td></tr>
               ) : filtered.map((r, i) => (
                 <tr key={r.requestId + i} onClick={() => setSelectedRow(selectedRow === i ? null : i)}
-                  style={{ cursor: "pointer", background: selectedRow === i ? "rgba(56,189,248,0.06)" : "transparent", transition: "background 0.15s" }}
-                  onMouseEnter={e => { if (selectedRow !== i) e.currentTarget.style.background = "rgba(56,189,248,0.03)"; }}
+                  style={{ cursor: "pointer", background: selectedRow === i ? "rgba(139,109,82,0.08)" : "transparent", transition: "background 0.15s" }}
+                  onMouseEnter={e => { if (selectedRow !== i) e.currentTarget.style.background = "rgba(139,109,82,0.04)"; }}
                   onMouseLeave={e => { if (selectedRow !== i) e.currentTarget.style.background = "transparent"; }}
                 >
                   <td style={tdStyle}>{new Date(r.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
@@ -361,7 +361,7 @@ function AuditTrail() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             {[["Request ID", r.requestId],["Timestamp", new Date(r.timestamp).toLocaleString()],["Status", r.status],["Submitted By", r.submittedBy],["Customer", r.customer],["Email", r.customerEmail],["Industry", r.industry],["Part", r.part],["Material", r.material],["Size", r.size],["Quantity", r.quantity],["Finish", r.finish],["Marking", r.marking],["Rush", r.rush],["Recommended Price", `$${r.unitPrice}`],["Final Price", r.finalPrice ? `$${r.finalPrice}` : "—"],["Price Range", r.priceRange],["Total", `$${r.total}`],["Confidence", r.confidence],["Approved By", r.approvedBy || "—"],["Notes", r.notes || "—"]].map(([k, v]) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", borderBottom: `1px solid rgba(56,189,248,0.06)` }}>
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", borderBottom: `1px solid rgba(139,109,82,0.08)` }}>
                 <span style={{ fontSize: 12, color: B.muted, fontFamily: FONT_BODY }}>{k}</span>
                 <span style={{ fontSize: 12, color: B.text, fontWeight: 500, textAlign: "right", maxWidth: "60%", overflow: "hidden", textOverflow: "ellipsis", fontFamily: FONT_MONO }}>{v}</span>
               </div>
@@ -429,7 +429,7 @@ function OwnerApproval({ data }) {
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.8, color: B.primary400, textTransform: "uppercase", marginBottom: 14, paddingBottom: 8, borderBottom: `1px solid ${B.border}`, fontFamily: FONT_MONO }}>Quote Details — {data.requestId}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {[["Customer", data.customer],["Email", data.customerEmail],["Industry", data.industry],["Part", data.part],["Material", data.material],["Size", data.size],["Quantity", data.quantity + " units"],["Finish", data.finish],["Marking", data.marking],["Rush", data.rush]].map(([k, v]) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 6px", borderBottom: `1px solid rgba(56,189,248,0.06)` }}>
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 6px", borderBottom: `1px solid rgba(139,109,82,0.08)` }}>
                 <span style={{ fontSize: 13, color: B.muted }}>{k}</span>
                 <span style={{ fontSize: 13, color: B.text, fontWeight: 500 }}>{v}</span>
               </div>
@@ -467,7 +467,7 @@ function OwnerApproval({ data }) {
           </div>
           {priceChanged && <div style={{ marginTop: 12, padding: "8px 12px", background: `${B.warning}08`, border: `1px solid ${B.warning}25`, borderRadius: 6, fontSize: 12, color: B.warning }}>Price modified from ${data.unitPrice} to ${modifiedPrice} per unit</div>}
         </div>
-        <button onClick={handleApprove} disabled={sending || !modifiedPrice} style={{ width: "100%", padding: "14px", background: `linear-gradient(135deg, #059669, ${B.success})`, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: FONT_MONO, opacity: sending ? 0.6 : 1 }}>
+        <button onClick={handleApprove} disabled={sending || !modifiedPrice} style={{ width: "100%", padding: "14px", background: `linear-gradient(135deg, #4a6e28, ${B.success})`, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: FONT_MONO, opacity: sending ? 0.6 : 1 }}>
           {sending ? "Approving..." : priceChanged ? `Approve at $${modifiedPrice}` : "Approve Quote"}
         </button>
       </div>
@@ -646,7 +646,7 @@ export default function App() {
                   <div style={cardStyle}>
                     <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.8, color: B.teal, textTransform: "uppercase", marginBottom: 14, paddingBottom: 8, borderBottom: `1px solid ${B.border}`, fontFamily: FONT_MONO }}>Comparable Quotes</div>
                     {pricing.comparables.length === 0 ? <div style={{ color: B.muted, fontSize: 12 }}>No direct comparables found.</div> : pricing.comparables.map((q, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 6px", borderBottom: `1px solid rgba(56,189,248,0.06)` }}>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 6px", borderBottom: `1px solid rgba(139,109,82,0.08)` }}>
                         <div>
                           <div style={{ fontSize: 14, color: B.text, fontWeight: 600 }}>{q.customer}</div>
                           <div style={{ fontSize: 12, color: B.muted, marginTop: 2 }}>{q.material} — {q.size_length_in}x{q.size_width_in}in — qty {q.quantity}</div>
@@ -658,7 +658,7 @@ export default function App() {
                   <div style={cardStyle}>
                     <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.8, color: B.teal, textTransform: "uppercase", marginBottom: 14, paddingBottom: 8, borderBottom: `1px solid ${B.border}`, fontFamily: FONT_MONO }}>Request Summary</div>
                     {[["Submitted By", form.submittedBy],["Customer", form.customer],["Email", form.customerEmail],["Industry", form.industry],["Part Name", form.part],["Material", form.material],["Size", `${form.length} x ${form.width} x ${form.thickness} in`],["Quantity", form.quantity],["Finish", form.finish],["Marking", form.marking],["Rush Order", form.rush]].map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid rgba(56,189,248,0.06)` }}>
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid rgba(139,109,82,0.08)` }}>
                         <span style={{ fontSize: 13, color: B.muted }}>{k}</span>
                         <span style={{ fontSize: 13, color: B.text, fontWeight: 500 }}>{v}</span>
                       </div>
@@ -684,7 +684,7 @@ export default function App() {
 
                 {/* Actions */}
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => sendToWebhook("approved")} disabled={!!sending} style={{ flex: 1, padding: "13px", background: `linear-gradient(135deg, #059669, ${B.success})`, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: FONT_MONO, opacity: sending ? 0.6 : 1 }}>{sending === "approved" ? "Sending..." : "Approve & Send"}</button>
+                  <button onClick={() => sendToWebhook("approved")} disabled={!!sending} style={{ flex: 1, padding: "13px", background: `linear-gradient(135deg, #4a6e28, ${B.success})`, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: FONT_MONO, opacity: sending ? 0.6 : 1 }}>{sending === "approved" ? "Sending..." : "Approve & Send"}</button>
                   <button onClick={() => sendToWebhook("escalated")} disabled={!!sending} style={{ flex: 1, padding: "13px", background: `linear-gradient(135deg, ${B.primary600}, ${B.primary})`, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", cursor: sending ? "wait" : "pointer", fontFamily: FONT_MONO, opacity: sending ? 0.6 : 1 }}>{sending === "escalated" ? "Sending..." : "Escalate to Owner"}</button>
                   <button onClick={handleReject} style={{ padding: "13px 20px", background: "transparent", color: B.muted, border: `1px solid ${B.border}`, borderRadius: 8, fontSize: 13, fontWeight: 500, letterSpacing: 0.8, textTransform: "uppercase", cursor: "pointer", fontFamily: FONT_MONO }}>Reject</button>
                 </div>
