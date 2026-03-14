@@ -185,6 +185,7 @@ function AuditTrail({ onBack }) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [industryFilter, setIndustryFilter] = useState("All");
   const [confidenceFilter, setConfidenceFilter] = useState("All");
+  const [partFilter, setPartFilter] = useState("All");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sortCol, setSortCol] = useState("timestamp");
@@ -196,6 +197,7 @@ function AuditTrail({ onBack }) {
 
   const statuses = useMemo(() => ["All", ...new Set(trail.map(r => r.status))], [trail]);
   const industries = useMemo(() => ["All", ...new Set(trail.map(r => r.industry))], [trail]);
+  const parts = useMemo(() => ["All", ...new Set(trail.map(r => r.part))].sort(), [trail]);
 
   const filtered = useMemo(() => {
     let rows = [...trail];
@@ -212,8 +214,9 @@ function AuditTrail({ onBack }) {
     if (statusFilter !== "All") rows = rows.filter(r => r.status === statusFilter);
     if (industryFilter !== "All") rows = rows.filter(r => r.industry === industryFilter);
     if (confidenceFilter !== "All") rows = rows.filter(r => r.confidence === confidenceFilter);
-    if (dateFrom) rows = rows.filter(r => r.timestamp >= dateFrom);
-    if (dateTo) rows = rows.filter(r => r.timestamp <= dateTo + "T23:59:59");
+    if (partFilter !== "All") rows = rows.filter(r => r.part === partFilter);
+    if (dateFrom) rows = rows.filter(r => r.timestamp.slice(0, 10) >= dateFrom);
+    if (dateTo) rows = rows.filter(r => r.timestamp.slice(0, 10) <= dateTo);
 
     // Sort
     rows.sort((a, b) => {
@@ -232,7 +235,7 @@ function AuditTrail({ onBack }) {
     });
 
     return rows;
-  }, [trail, search, statusFilter, industryFilter, confidenceFilter, dateFrom, dateTo, sortCol, sortDir]);
+  }, [trail, search, statusFilter, industryFilter, confidenceFilter, partFilter, dateFrom, dateTo, sortCol, sortDir]);
 
   const handleSort = (col) => {
     if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -321,6 +324,12 @@ function AuditTrail({ onBack }) {
             </select>
           </div>
           <div>
+            <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>Part Name</label>
+            <select style={inp} value={partFilter} onChange={e => setPartFilter(e.target.value)}>
+              {parts.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
             <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>Confidence</label>
             <select style={inp} value={confidenceFilter} onChange={e => setConfidenceFilter(e.target.value)}>
               {["All","HIGH","MEDIUM","LOW"].map(s => <option key={s}>{s}</option>)}
@@ -328,11 +337,11 @@ function AuditTrail({ onBack }) {
           </div>
           <div>
             <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>From</label>
-            <input type="date" style={inp} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            <input type="date" style={{ ...inp, colorScheme: "dark" }} value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: B.muted, marginBottom: 4 }}>To</label>
-            <input type="date" style={inp} value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            <input type="date" style={{ ...inp, colorScheme: "dark" }} value={dateTo} onChange={e => setDateTo(e.target.value)} />
           </div>
           <button
             onClick={() => exportToCSV(filtered)}
@@ -345,7 +354,7 @@ function AuditTrail({ onBack }) {
             }}
           >EXPORT CSV</button>
           <button
-            onClick={() => { setSearch(""); setStatusFilter("All"); setIndustryFilter("All"); setConfidenceFilter("All"); setDateFrom(""); setDateTo(""); }}
+            onClick={() => { setSearch(""); setStatusFilter("All"); setIndustryFilter("All"); setConfidenceFilter("All"); setPartFilter("All"); setDateFrom(""); setDateTo(""); }}
             style={{
               padding: "9px 14px", background: B.glass, color: B.muted,
               border: '1px solid rgba(139,92,246,0.45)', borderRadius: 6, fontSize: 11,
