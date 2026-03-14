@@ -40,18 +40,18 @@ const HISTORICAL_QUOTES = [
 
 // ── SAMPLE AUDIT DATA ────────────────────────────────────────────────────
 const SAMPLE_AUDIT_DATA = [
-  { requestId:"QR-S001", timestamp:"2026-03-14T09:12:33.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Bell Helicopter", customerEmail:"procurement@bellhelicopter.com", industry:"Aerospace", part:"Data Plate - Engine Serial", material:"Aluminum", size:"4 x 2 x 0.063 in", quantity:"75", finish:"Anodized Black", marking:"Laser Engraved", rush:"No", notes:"", unitPrice:"17.17", priceRange:"15.46 - 19.75", total:"1287.75", confidence:"HIGH", approvedBy:"Maria Santos" },
-  { requestId:"QR-S002", timestamp:"2026-03-13T14:45:10.000Z", status:"Escalated", submittedBy:"James Rivera", customer:"Lockheed Martin", customerEmail:"quotes@lockheedmartin.com", industry:"Defense", part:"Airframe Plate", material:"Aluminum", size:"10 x 6 x 0.08 in", quantity:"20", finish:"Alodine", marking:"Chemical Etch", rush:"Yes", notes:"ITAR controlled", unitPrice:"97.50", priceRange:"87.75 - 112.13", total:"1950.00", confidence:"MEDIUM", approvedBy:"" },
-  { requestId:"QR-S003", timestamp:"2026-03-13T11:22:05.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Boeing", customerEmail:"sourcing@boeing.com", industry:"Aerospace", part:"Landing Gear Plate", material:"Stainless Steel", size:"5 x 3 x 0.05 in", quantity:"45", finish:"Passivated", marking:"Laser Engraved", rush:"No", notes:"AS9100 required", unitPrice:"38.00", priceRange:"34.20 - 43.70", total:"1710.00", confidence:"HIGH", approvedBy:"Maria Santos" },
-  { requestId:"QR-S004", timestamp:"2026-03-12T16:08:41.000Z", status:"Rejected", submittedBy:"Carlos Vega", customer:"Tesla Motors", customerEmail:"procurement@tesla.com", industry:"Automotive", part:"VIN Plate - Cab Door", material:"Aluminum", size:"3 x 2 x 0.04 in", quantity:"1000", finish:"Anodized", marking:"Laser Engraved", rush:"No", notes:"Customer requested lower price", unitPrice:"7.83", priceRange:"7.05 - 9.01", total:"7830.00", confidence:"MEDIUM", approvedBy:"" },
-  { requestId:"QR-S005", timestamp:"2026-03-12T10:33:18.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Medtronic", customerEmail:"vendor@medtronic.com", industry:"Medical", part:"Surgical Instrument Tag", material:"Stainless Steel", size:"1.5 x 0.5 x 0.03 in", quantity:"200", finish:"Electropolished", marking:"Laser Engraved", rush:"No", notes:"FDA UDI compliant", unitPrice:"18.50", priceRange:"16.65 - 21.28", total:"3700.00", confidence:"HIGH", approvedBy:"James Rivera" },
-  { requestId:"QR-S006", timestamp:"2026-03-11T08:55:02.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Caterpillar", customerEmail:"purchasing@cat.com", industry:"Automotive", part:"Equipment Nameplate", material:"Aluminum", size:"5 x 3 x 0.063 in", quantity:"250", finish:"Anodized Black", marking:"Embossed", rush:"No", notes:"", unitPrice:"9.20", priceRange:"8.28 - 10.58", total:"2300.00", confidence:"HIGH", approvedBy:"Maria Santos" },
-  { requestId:"QR-S007", timestamp:"2026-03-11T13:20:55.000Z", status:"Escalated", submittedBy:"Carlos Vega", customer:"Northrop Grumman", customerEmail:"contracts@northropgrumman.com", industry:"Defense", part:"Electronics Panel ID", material:"Stainless Steel", size:"8 x 4 x 0.05 in", quantity:"30", finish:"Passivated", marking:"Chemical Etch", rush:"Yes", notes:"ITAR controlled, classified project", unitPrice:"52.50", priceRange:"47.25 - 60.38", total:"1575.00", confidence:"MEDIUM", approvedBy:"" },
-  { requestId:"QR-S008", timestamp:"2026-03-10T15:42:30.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Stryker", customerEmail:"procurement@stryker.com", industry:"Medical", part:"Implant ID Tag", material:"Titanium", size:"1.5 x 0.75 x 0.02 in", quantity:"100", finish:"Electropolished", marking:"Laser Engraved", rush:"No", notes:"ISO 13485, biocompatible", unitPrice:"38.00", priceRange:"34.20 - 43.70", total:"3800.00", confidence:"HIGH", approvedBy:"James Rivera" },
-  { requestId:"QR-S009", timestamp:"2026-03-10T09:15:44.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Airbus", customerEmail:"supply.chain@airbus.com", industry:"Aerospace", part:"Interior Panel Placard", material:"Aluminum", size:"6 x 3 x 0.04 in", quantity:"150", finish:"Anodized", marking:"Silkscreen", rush:"No", notes:"", unitPrice:"19.50", priceRange:"17.55 - 22.43", total:"2925.00", confidence:"HIGH", approvedBy:"Maria Santos" },
-  { requestId:"QR-S010", timestamp:"2026-03-09T11:30:12.000Z", status:"Rejected", submittedBy:"Carlos Vega", customer:"General Dynamics", customerEmail:"quotes@gd.com", industry:"Defense", part:"Warning Label", material:"Polyester", size:"4 x 2 x 0.01 in", quantity:"500", finish:"None", marking:"Digital Print", rush:"No", notes:"Budget constraints", unitPrice:"3.20", priceRange:"2.88 - 3.68", total:"1600.00", confidence:"LOW", approvedBy:"" },
-  { requestId:"QR-S011", timestamp:"2026-03-08T14:05:28.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Peterbilt Motors", customerEmail:"purchasing@peterbilt.com", industry:"Automotive", part:"Bumper ID Plate", material:"Stainless Steel", size:"3 x 2 x 0.05 in", quantity:"300", finish:"Brushed", marking:"Embossed", rush:"No", notes:"", unitPrice:"8.75", priceRange:"7.88 - 10.06", total:"2625.00", confidence:"HIGH", approvedBy:"Maria Santos" },
-  { requestId:"QR-S012", timestamp:"2026-03-07T10:48:33.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Boston Scientific", customerEmail:"vendor.mgmt@bsci.com", industry:"Medical", part:"Device Serial Plate", material:"Titanium", size:"1.5 x 0.75 x 0.02 in", quantity:"75", finish:"Electropolished", marking:"Laser Engraved", rush:"Yes", notes:"Urgent production run", unitPrice:"47.50", priceRange:"34.20 - 43.70", total:"3562.50", confidence:"HIGH", approvedBy:"Owner" },
+  { requestId:"QR-S001", timestamp:"2026-03-14T09:12:33.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Bell Helicopter", customerEmail:"procurement@bellhelicopter.com", industry:"Aerospace", part:"Data Plate - Engine Serial", material:"Aluminum", size:"4 x 2 x 0.063 in", quantity:"75", finish:"Anodized Black", marking:"Laser Engraved", rush:"No", notes:"", unitPrice:"17.17", finalPrice:"17.17", priceRange:"15.46 - 19.75", total:"1287.75", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S002", timestamp:"2026-03-13T14:45:10.000Z", status:"Escalated", submittedBy:"James Rivera", customer:"Lockheed Martin", customerEmail:"quotes@lockheedmartin.com", industry:"Defense", part:"Airframe Plate", material:"Aluminum", size:"10 x 6 x 0.08 in", quantity:"20", finish:"Alodine", marking:"Chemical Etch", rush:"Yes", notes:"ITAR controlled", unitPrice:"97.50", finalPrice:"", priceRange:"87.75 - 112.13", total:"1950.00", confidence:"MEDIUM", approvedBy:"" },
+  { requestId:"QR-S003", timestamp:"2026-03-13T11:22:05.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Boeing", customerEmail:"sourcing@boeing.com", industry:"Aerospace", part:"Landing Gear Plate", material:"Stainless Steel", size:"5 x 3 x 0.05 in", quantity:"45", finish:"Passivated", marking:"Laser Engraved", rush:"No", notes:"AS9100 required", unitPrice:"38.00", finalPrice:"36.50", priceRange:"34.20 - 43.70", total:"1642.50", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S004", timestamp:"2026-03-12T16:08:41.000Z", status:"Rejected", submittedBy:"Carlos Vega", customer:"Tesla Motors", customerEmail:"procurement@tesla.com", industry:"Automotive", part:"VIN Plate - Cab Door", material:"Aluminum", size:"3 x 2 x 0.04 in", quantity:"1000", finish:"Anodized", marking:"Laser Engraved", rush:"No", notes:"Customer requested lower price", unitPrice:"7.83", finalPrice:"", priceRange:"7.05 - 9.01", total:"7830.00", confidence:"MEDIUM", approvedBy:"" },
+  { requestId:"QR-S005", timestamp:"2026-03-12T10:33:18.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Medtronic", customerEmail:"vendor@medtronic.com", industry:"Medical", part:"Surgical Instrument Tag", material:"Stainless Steel", size:"1.5 x 0.5 x 0.03 in", quantity:"200", finish:"Electropolished", marking:"Laser Engraved", rush:"No", notes:"FDA UDI compliant", unitPrice:"18.50", finalPrice:"18.50", priceRange:"16.65 - 21.28", total:"3700.00", confidence:"HIGH", approvedBy:"James Rivera" },
+  { requestId:"QR-S006", timestamp:"2026-03-11T08:55:02.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Caterpillar", customerEmail:"purchasing@cat.com", industry:"Automotive", part:"Equipment Nameplate", material:"Aluminum", size:"5 x 3 x 0.063 in", quantity:"250", finish:"Anodized Black", marking:"Embossed", rush:"No", notes:"", unitPrice:"9.20", finalPrice:"9.20", priceRange:"8.28 - 10.58", total:"2300.00", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S007", timestamp:"2026-03-11T13:20:55.000Z", status:"Escalated", submittedBy:"Carlos Vega", customer:"Northrop Grumman", customerEmail:"contracts@northropgrumman.com", industry:"Defense", part:"Electronics Panel ID", material:"Stainless Steel", size:"8 x 4 x 0.05 in", quantity:"30", finish:"Passivated", marking:"Chemical Etch", rush:"Yes", notes:"ITAR controlled, classified project", unitPrice:"52.50", finalPrice:"", priceRange:"47.25 - 60.38", total:"1575.00", confidence:"MEDIUM", approvedBy:"" },
+  { requestId:"QR-S008", timestamp:"2026-03-10T15:42:30.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Stryker", customerEmail:"procurement@stryker.com", industry:"Medical", part:"Implant ID Tag", material:"Titanium", size:"1.5 x 0.75 x 0.02 in", quantity:"100", finish:"Electropolished", marking:"Laser Engraved", rush:"No", notes:"ISO 13485, biocompatible", unitPrice:"38.00", finalPrice:"38.00", priceRange:"34.20 - 43.70", total:"3800.00", confidence:"HIGH", approvedBy:"James Rivera" },
+  { requestId:"QR-S009", timestamp:"2026-03-10T09:15:44.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Airbus", customerEmail:"supply.chain@airbus.com", industry:"Aerospace", part:"Interior Panel Placard", material:"Aluminum", size:"6 x 3 x 0.04 in", quantity:"150", finish:"Anodized", marking:"Silkscreen", rush:"No", notes:"", unitPrice:"19.50", finalPrice:"18.75", priceRange:"17.55 - 22.43", total:"2812.50", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S010", timestamp:"2026-03-09T11:30:12.000Z", status:"Rejected", submittedBy:"Carlos Vega", customer:"General Dynamics", customerEmail:"quotes@gd.com", industry:"Defense", part:"Warning Label", material:"Polyester", size:"4 x 2 x 0.01 in", quantity:"500", finish:"None", marking:"Digital Print", rush:"No", notes:"Budget constraints", unitPrice:"3.20", finalPrice:"", priceRange:"2.88 - 3.68", total:"1600.00", confidence:"LOW", approvedBy:"" },
+  { requestId:"QR-S011", timestamp:"2026-03-08T14:05:28.000Z", status:"Approved", submittedBy:"Maria Santos", customer:"Peterbilt Motors", customerEmail:"purchasing@peterbilt.com", industry:"Automotive", part:"Bumper ID Plate", material:"Stainless Steel", size:"3 x 2 x 0.05 in", quantity:"300", finish:"Brushed", marking:"Embossed", rush:"No", notes:"", unitPrice:"8.75", finalPrice:"8.75", priceRange:"7.88 - 10.06", total:"2625.00", confidence:"HIGH", approvedBy:"Maria Santos" },
+  { requestId:"QR-S012", timestamp:"2026-03-07T10:48:33.000Z", status:"Approved", submittedBy:"James Rivera", customer:"Boston Scientific", customerEmail:"vendor.mgmt@bsci.com", industry:"Medical", part:"Device Serial Plate", material:"Titanium", size:"1.5 x 0.75 x 0.02 in", quantity:"75", finish:"Electropolished", marking:"Laser Engraved", rush:"Yes", notes:"Urgent production run", unitPrice:"47.50", finalPrice:"45.00", priceRange:"34.20 - 43.70", total:"3375.00", confidence:"HIGH", approvedBy:"Owner" },
 ];
 
 // ── AUDIT TRAIL HELPERS ──────────────────────────────────────────────────
@@ -73,11 +73,12 @@ function saveAuditEntry(entry) {
 
 function exportToCSV(data) {
   if (!data.length) return;
-  const headers = ["Request ID","Timestamp","Status","Submitted By","Customer","Email","Industry","Part","Material","Size","Quantity","Finish","Marking","Rush","Unit Price","Total","Confidence","Approved By","Notes"];
+  const headers = ["Request ID","Date","Customer","Part","Material","Quantity","Recommended Price","Final Approved Price","Confidence","Status","Approved By","Email","Industry","Size","Finish","Marking","Rush","Total","Notes"];
   const rows = data.map(r => [
-    r.requestId, r.timestamp, r.status, r.submittedBy, r.customer, r.customerEmail,
-    r.industry, r.part, r.material, r.size, r.quantity, r.finish, r.marking, r.rush,
-    r.unitPrice, r.total, r.confidence, r.approvedBy || "", r.notes || "",
+    r.requestId, r.timestamp, r.customer, r.part, r.material, r.quantity,
+    r.unitPrice, r.finalPrice || "", r.confidence, r.status, r.approvedBy || "",
+    r.customerEmail, r.industry, r.size, r.finish, r.marking, r.rush,
+    r.total, r.notes || "",
   ].map(v => `"${String(v || "").replace(/"/g, '""')}"`));
   const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
@@ -218,7 +219,7 @@ function AuditTrail({ onBack }) {
     rows.sort((a, b) => {
       let aVal = a[sortCol] || "";
       let bVal = b[sortCol] || "";
-      if (sortCol === "unitPrice" || sortCol === "total" || sortCol === "quantity") {
+      if (sortCol === "unitPrice" || sortCol === "finalPrice" || sortCol === "total" || sortCol === "quantity") {
         aVal = parseFloat(aVal) || 0;
         bVal = parseFloat(bVal) || 0;
       } else {
@@ -365,27 +366,25 @@ function AuditTrail({ onBack }) {
       {/* Table */}
       <div style={{ ...card, padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1100 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1300 }}>
             <thead>
               <tr style={{ background: "rgba(139,92,246,0.08)" }}>
-                <th style={thStyle} onClick={() => handleSort("requestId")}>ID{sortIcon("requestId")}</th>
                 <th style={thStyle} onClick={() => handleSort("timestamp")}>Date{sortIcon("timestamp")}</th>
-                <th style={thStyle} onClick={() => handleSort("status")}>Status{sortIcon("status")}</th>
                 <th style={thStyle} onClick={() => handleSort("customer")}>Customer{sortIcon("customer")}</th>
-                <th style={thStyle} onClick={() => handleSort("industry")}>Industry{sortIcon("industry")}</th>
                 <th style={thStyle} onClick={() => handleSort("part")}>Part{sortIcon("part")}</th>
                 <th style={thStyle} onClick={() => handleSort("material")}>Material{sortIcon("material")}</th>
-                <th style={thStyle} onClick={() => handleSort("quantity")}>Qty{sortIcon("quantity")}</th>
-                <th style={thStyle} onClick={() => handleSort("unitPrice")}>Unit Price{sortIcon("unitPrice")}</th>
-                <th style={thStyle} onClick={() => handleSort("total")}>Total{sortIcon("total")}</th>
-                <th style={thStyle} onClick={() => handleSort("confidence")}>Conf.{sortIcon("confidence")}</th>
-                <th style={thStyle} onClick={() => handleSort("submittedBy")}>Rep{sortIcon("submittedBy")}</th>
+                <th style={thStyle} onClick={() => handleSort("quantity")}>Quantity{sortIcon("quantity")}</th>
+                <th style={thStyle} onClick={() => handleSort("unitPrice")}>Recommended Price{sortIcon("unitPrice")}</th>
+                <th style={thStyle} onClick={() => handleSort("finalPrice")}>Final Approved Price{sortIcon("finalPrice")}</th>
+                <th style={thStyle} onClick={() => handleSort("confidence")}>Confidence{sortIcon("confidence")}</th>
+                <th style={thStyle} onClick={() => handleSort("status")}>Status{sortIcon("status")}</th>
+                <th style={thStyle} onClick={() => handleSort("approvedBy")}>Approved By{sortIcon("approvedBy")}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={12} style={{ ...tdStyle, textAlign: "center", padding: 40, color: B.muted }}>
+                  <td colSpan={10} style={{ ...tdStyle, textAlign: "center", padding: 40, color: B.muted }}>
                     {trail.length === 0 ? "No quotes yet. Submit a quote to begin tracking." : "No records match your filters."}
                   </td>
                 </tr>
@@ -401,23 +400,21 @@ function AuditTrail({ onBack }) {
                   onMouseEnter={e => { if (selectedRow !== i) e.currentTarget.style.background = "rgba(139,92,246,0.08)"; }}
                   onMouseLeave={e => { if (selectedRow !== i) e.currentTarget.style.background = i % 2 === 0 ? "transparent" : "rgba(139,92,246,0.03)"; }}
                 >
-                  <td style={{ ...tdStyle, color: B.primary400, fontWeight: 600 }}>{r.requestId}</td>
                   <td style={tdStyle}>{new Date(r.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
-                  <td style={tdStyle}><Badge label={r.status} color={statusColor(r.status)} /></td>
                   <td style={{ ...tdStyle, fontWeight: 500 }}>{r.customer}</td>
-                  <td style={tdStyle}>{r.industry}</td>
-                  <td style={{ ...tdStyle, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }}>{r.part}</td>
+                  <td style={{ ...tdStyle, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>{r.part}</td>
                   <td style={tdStyle}>{r.material}</td>
                   <td style={{ ...tdStyle, textAlign: "right" }}>{r.quantity}</td>
                   <td style={{ ...tdStyle, textAlign: "right", color: B.primary400, fontWeight: 600 }}>${r.unitPrice}</td>
-                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>${parseFloat(r.total).toLocaleString()}</td>
+                  <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600, color: r.finalPrice ? (r.finalPrice !== r.unitPrice ? B.warning : B.success) : B.muted }}>{r.finalPrice ? `$${r.finalPrice}` : "—"}</td>
                   <td style={tdStyle}>
                     <Badge
                       label={r.confidence}
                       color={r.confidence === "HIGH" ? B.success : r.confidence === "MEDIUM" ? B.warning : B.danger}
                     />
                   </td>
-                  <td style={tdStyle}>{r.submittedBy}</td>
+                  <td style={tdStyle}><Badge label={r.status} color={statusColor(r.status)} /></td>
+                  <td style={{ ...tdStyle, fontWeight: 500 }}>{r.approvedBy || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -531,6 +528,7 @@ function OwnerApproval({ data }) {
         priceRange: data.priceRange,
         total: modifiedTotal,
         confidence: data.confidence,
+        finalPrice: modifiedPrice,
         approvedBy: "Owner" + (priceChanged ? ` (modified from $${data.unitPrice})` : ""),
       });
       setDone(true);
@@ -776,6 +774,7 @@ export default function App() {
     rush: form.rush,
     notes: form.notes,
     unitPrice: pricing?.unitPrice || "",
+    finalPrice: action === "approved" ? (pricing?.unitPrice || "") : "",
     priceRange: pricing ? `${pricing.low} - ${pricing.high}` : "",
     total: pricing?.total || "",
     confidence: pricing?.confidence || "",
