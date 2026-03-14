@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 
-// ── BRAND TOKENS — CUEGENT AI ────────────────────────────────────────────
+// ── BRAND TOKENS — OPERIX AI ────────────────────────────────────────────
 const B = {
   bg:        "#f5f0e8",
   surface:   "#ece5d8",
@@ -94,7 +94,7 @@ function exportToCSV(data) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `Cuegent_Audit_Trail_${new Date().toISOString().split("T")[0]}.csv`;
+  a.download = `Operix_Audit_Trail_${new Date().toISOString().split("T")[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -412,7 +412,7 @@ function OwnerApproval({ data }) {
       <style>{GLOBAL_CSS}</style>
       <div style={{ borderBottom: `1px solid ${B.border}`, background: B.surface, padding: "14px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ background: `linear-gradient(135deg, ${B.primary600}, ${B.primary})`, color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, padding: "5px 12px", borderRadius: 6 }}>CUEGENT</div>
+          <div style={{ background: `linear-gradient(135deg, ${B.primary600}, ${B.primary})`, color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, padding: "5px 12px", borderRadius: 6 }}>OPERIX</div>
           <div>
             <div style={{ color: B.textBright, fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 700 }}>Pricing Engine</div>
             <div style={{ color: B.muted, fontSize: 11, letterSpacing: 1, marginTop: 1, fontFamily: FONT_MONO }}>OWNER APPROVAL</div>
@@ -528,7 +528,7 @@ export default function App() {
       {/* Header */}
       <div style={{ borderBottom: `1px solid ${B.border}`, background: B.surface, padding: "14px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ background: `linear-gradient(135deg, ${B.primary600}, ${B.primary})`, color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, padding: "5px 12px", borderRadius: 6 }}>CUEGENT</div>
+          <div style={{ background: `linear-gradient(135deg, ${B.primary600}, ${B.primary})`, color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, padding: "5px 12px", borderRadius: 6 }}>OPERIX</div>
           <div>
             <div style={{ color: B.textBright, fontFamily: FONT_HEADING, fontSize: 15, fontWeight: 700 }}>Pricing Engine</div>
             <div style={{ color: B.muted, fontSize: 11, letterSpacing: 1, marginTop: 1, fontFamily: FONT_MONO }}>AI-POWERED QUOTING</div>
@@ -604,7 +604,7 @@ export default function App() {
                   <div style={{ position: "absolute", inset: 10, border: "1px solid transparent", borderTopColor: B.teal, borderRadius: "50%", animation: "spin 0.6s linear infinite reverse" }} />
                 </div>
                 <div style={{ fontFamily: FONT_HEADING, fontSize: 20, color: B.textBright, fontWeight: 700, marginBottom: 8 }}>Analyzing Historical Data</div>
-                <div style={{ color: B.muted, fontSize: 13, animation: "pulse 1.5s ease infinite", fontFamily: FONT_MONO }}>Cuegent AI is generating your pricing recommendation...</div>
+                <div style={{ color: B.muted, fontSize: 13, animation: "pulse 1.5s ease infinite", fontFamily: FONT_MONO }}>Operix AI is generating your pricing recommendation...</div>
               </div>
             )}
 
